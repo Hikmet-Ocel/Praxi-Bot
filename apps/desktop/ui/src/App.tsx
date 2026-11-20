@@ -1,4 +1,4 @@
-import { BellDot, ChevronDown, FlaskConical, GripVertical, Star, LoaderCircle, MessageSquare, Plus, Search, ServerOff, Settings2, Minus, Square, X } from "lucide-react";
+import { BellDot, ChevronDown, FlaskConical, GripVertical, Star, LoaderCircle, MessageSquare, Plus, Search, ServerOff, Settings2 } from "lucide-react";
 import { unreadBotIds } from "./lib/unread";
 import { useReadState } from "./store/readStateStore";
 import { ApiError } from "./api/client";
@@ -22,6 +22,7 @@ import {
 import styles from "./App.module.css";
 import { AppsPill } from "./components/AppsPill";
 import { BotPanel } from "./components/BotPanel";
+import { WindowControls } from "./components/WindowControls";
 import { ResizeGrip } from "./components/ResizeGrip";
 import { PRODUCT_CONFIG } from "./config/product";
 import {
@@ -468,6 +469,9 @@ function AppShell() {
       .catch(() => {});
   }, [settings.windowFrame]);
 
+  // Native frame off (the default on Windows): the app draws the window controls.
+  const customChrome = isTauriRuntime() && !settings.windowFrame;
+
   const handleLanguageChange = (language: SupportedLanguage) => {
     void i18n.changeLanguage(language);
     updateSettings({ language });
@@ -912,14 +916,9 @@ function AppShell() {
               <ChevronDown aria-hidden="true" />
             </button>
           ) : <span />}
-          <div className={styles.windowActions} data-tauri-drag-region>
+          <div className={`${styles.windowActions} ${customChrome ? styles.windowActionsReserve : ""}`} data-tauri-drag-region>
             <ComputerPicker />
             <button className={styles.iconButton} title={t("account.settings")} aria-label={t("account.settings")} onClick={() => setSettingsOpen("general")}><Settings2 /></button>
-            {isTauriRuntime() && !settings.windowFrame ? <>
-              <button className={styles.iconButton} title={t("window.minimize")} aria-label={t("window.minimize")} onClick={() => void getCurrentWindow().minimize()}><Minus /></button>
-              <button className={styles.iconButton} title={t("window.maximize")} aria-label={t("window.maximize")} onClick={() => void getCurrentWindow().toggleMaximize()}><Square /></button>
-              <button className={styles.iconButton} title={t("common.close")} aria-label={t("common.close")} onClick={() => void getCurrentWindow().close()}><X /></button>
-            </> : null}
           </div>
         </div>
         {activeComputerId === LOCAL_COMPUTER ? <HealthIndicator /> : null}
@@ -1172,6 +1171,7 @@ function AppShell() {
       {activeComputerId !== LOCAL_COMPUTER ? (
         <LiveViewer source="local" onChatSlots={route.kind === "chat" && !hostEmpty ? setLocalChatSlots : undefined} />
       ) : null}
+      {customChrome ? <WindowControls /> : null}
     </SidebarLayout>
   );
 }

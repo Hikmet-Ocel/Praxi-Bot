@@ -3905,7 +3905,7 @@
         "title": "Hesap adı"
       },
       "frame": {
-        "description": "Yerel başlık çubuğunu göster (bazı platformlarda yeniden başlatma gerekebilir).",
+        "description": "Uygulamanın kendi pencere düğmeleri yerine Windows başlık çubuğunu göster.",
         "title": "Pencere çerçevesi"
       },
       "send": {
@@ -4244,8 +4244,10 @@
     "takeTheWheel": "Direksiyonu devral"
   },
   "window": {
-    "maximize": "Büyüt / geri yükle",
-    "minimize": "Küçült"
+    "close": "Kapat",
+    "maximize": "Büyüt",
+    "minimize": "Küçült",
+    "restore": "Geri yükle"
   },
   "workflow": {
     "button": "İş akışı olarak kaydet",

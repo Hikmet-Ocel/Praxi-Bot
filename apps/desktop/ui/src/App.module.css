@@ -547,6 +547,11 @@
   gap: var(--space-3);
 }
 
+.windowActionsReserve {
+  /* Room for the fixed minimize / maximize / close buttons (WindowControls). */
+  padding-right: calc(var(--space-12) * 3);
+}
+
 .botChip {
   display: inline-flex;
   align-items: center;

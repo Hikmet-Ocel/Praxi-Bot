@@ -3905,7 +3905,7 @@
         "title": "Account name"
       },
       "frame": {
-        "description": "Show the native title bar (requires restart on some platforms).",
+        "description": "Show the native title bar instead of the app's own window buttons.",
         "title": "Window frame"
       },
       "send": {
@@ -4244,8 +4244,10 @@
     "takeTheWheel": "Take the wheel"
   },
   "window": {
-    "maximize": "Maximize / restore",
-    "minimize": "Minimize"
+    "close": "Close",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
+    "restore": "Restore"
   },
   "workflow": {
     "button": "Save as workflow",
