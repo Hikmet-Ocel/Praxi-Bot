@@ -2629,7 +2629,9 @@
     "send": "Nachricht senden",
     "settings": "Einstellungen öffnen",
     "stop": "Alle Bot-Läufe stoppen",
-    "title": "Tastenkürzel"
+    "title": "Tastenkürzel",
+    "voiceCallEnd": "Sprachanruf beenden",
+    "voiceCallTalk": "Im Push-to-Talk-Anruf zum Sprechen halten"
   },
   "home": {
     "admin": {
@@ -4182,6 +4184,37 @@
       "preview": "Hallo, das ist meine Stimme.",
       "title": "Stimme für diesen Bot",
       "useGlobal": "Wie in den Einstellungen"
+    },
+    "call": {
+      "approvalHint": "Bestätigen oder lehnen Sie auf der Karte im Chat ab. Freigaben sind per Sprache nicht möglich.",
+      "captions": "Untertitel",
+      "close": "Schließen",
+      "end": "Anruf beenden",
+      "holdToTalk": "Zum Sprechen gedrückt halten",
+      "interrupt": "Unterbrechen",
+      "micMuted": "Mikrofon stummgeschaltet",
+      "micOn": "Mikrofon an",
+      "mute": "Mikrofon stummschalten",
+      "noSpeech": "Keine Sprache erkannt. Ich höre weiter zu.",
+      "notConfigured": "Diktieren ist noch nicht eingerichtet. Fügen Sie unter Einstellungen > Allgemein einen Transkriptionsdienst hinzu.",
+      "phase": {
+        "approval": "Warten auf Ihre Freigabe",
+        "failed": "Der Anruf wurde beendet",
+        "hearing": "Hört Ihnen zu…",
+        "listening": "Hört zu",
+        "speaking": "{{name}} spricht",
+        "starting": "Mikrofon wird gestartet…",
+        "thinking": "{{name}} denkt nach…"
+      },
+      "pushToTalk": "Push-to-Talk",
+      "replyFailed": "Der Bot konnte nicht antworten. Bitte erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "simulate": "Sprechen simulieren (Mock)",
+      "start": "Sprachchat starten",
+      "title": "Sprachanruf",
+      "transcribeFailed": "Das konnte nicht transkribiert werden. Bitte noch einmal sagen.",
+      "unmute": "Mikrofon einschalten",
+      "unsupported": "Dieses Fenster kann kein Audio aufnehmen."
     },
     "codeOmitted": "(Code ausgelassen)",
     "description": "Stimme und Tempo für die Vorlesen-Schaltfläche. Nutzt die Sprachausgabe deines Systems.",
