@@ -31,6 +31,7 @@ pub mod pc;
 pub mod provenance;
 pub mod schedule;
 pub mod script;
+pub mod secret_request;
 pub mod shell;
 mod util;
 
@@ -76,6 +77,9 @@ pub use schedule::{
 };
 pub use script::{
     GateHost, GateRequest, ResolverGate, SCRIPT_TOOL_NAME, ToolGate, cwd_for, raw_command_for,
+};
+pub use secret_request::{
+    Fields as SecretFields, SECRET_REQUEST, SECRET_REQUEST_CARD_KIND, SecretCard, entry_names,
 };
 
 pub use connector_email;
@@ -133,6 +137,9 @@ pub struct BuiltinConfig {
     /// and `desktop_set_value` accept `secret: "<name>"` and the model gets
     /// `secrets_list`; with `None` a `secret` parameter is refused.
     pub fill_secrets: Option<Arc<secret_store::FillSecrets>>,
+    /// Whether the model gets `secret_request` (needs `fill_secrets`). The owner's
+    /// global off switch: with `false` the tool is not offered at all.
+    pub secret_requests: bool,
     /// Ledger of files with an untrusted origin (see [`provenance`]); `None` = rules only.
     pub provenance: Option<Arc<dyn provenance::Provenance>>,
 }
@@ -189,6 +196,7 @@ impl BuiltinConfig {
             fs_access: None,
             fs_home: None,
             fill_secrets: None,
+            secret_requests: true,
             provenance: None,
         }
     }
@@ -240,6 +248,9 @@ pub fn build_builtin_tools(cfg: BuiltinConfig, registry: &ToolRegistry) -> Vec<A
     }
     if let Some(secrets) = &cfg.fill_secrets {
         all.push(fill_secret::secrets_list_tool(Arc::clone(secrets)));
+        if cfg.secret_requests {
+            all.push(secret_request::secret_request_tool(Arc::clone(secrets)));
+        }
     }
     let fs_home = cfg
         .fs_access

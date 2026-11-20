@@ -313,6 +313,9 @@ fn build_agent_with_skills(
     tools.desktop.clone_from(&desktop);
     tools.dynamic_desktop = dynamic_desktop;
     tools.fill_secrets = fill_secrets;
+    let secret_requests =
+        secret_requests_enabled(std::env::var("BOT_SECRET_REQUESTS").ok().as_deref());
+    tools.secret_requests = secret_requests;
     tools.provenance = Some(Arc::new(builtin_tools::provenance::StorageProvenance(
         Arc::clone(storage),
     )));
@@ -348,6 +351,7 @@ fn build_agent_with_skills(
             redactor: Some(redactor),
             max_computer_runs,
             approval_timeout,
+            secret_requests,
             memory,
             knowledge_decider: Some(Arc::new(agent_core::HeuristicKnowledgeDecider::new(
                 Arc::clone(storage),
@@ -379,6 +383,17 @@ struct ComputerLimits {
     max_computer_runs: Option<usize>,
     browser_idle_seconds: Option<u64>,
 }
+/// The owner's global switch for `secret_request` (`BOT_SECRET_REQUESTS=off`, `0`, `false`
+/// or `no` turns it off: the tool is not offered and the loop refuses it).
+fn secret_requests_enabled(env: Option<&str>) -> bool {
+    !env.is_some_and(|v| {
+        matches!(
+            v.trim().to_ascii_lowercase().as_str(),
+            "off" | "0" | "false" | "no"
+        )
+    })
+}
+
 /// How long an unanswered approval or question waits before it expires
 /// (`BOT_APPROVAL_TIMEOUT_SECONDS`; `0` = no limit, unset or invalid = the default).
 fn approval_timeout(env: Option<&str>) -> Duration {
@@ -1499,6 +1514,16 @@ paths:
         .unwrap();
         for tool in imported {
             registry.register(tool);
+        }
+    }
+
+    #[test]
+    fn secret_requests_switch_reads_the_environment() {
+        assert!(secret_requests_enabled(None));
+        assert!(secret_requests_enabled(Some("on")));
+        assert!(secret_requests_enabled(Some("garbage")));
+        for off in ["off", "0", "FALSE", " no "] {
+            assert!(!secret_requests_enabled(Some(off)), "{off}");
         }
     }
 
