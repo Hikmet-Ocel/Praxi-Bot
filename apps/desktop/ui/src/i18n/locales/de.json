@@ -2151,6 +2151,14 @@
         "hint": "Er läuft dort und ist auf diesem Computer eingefroren. Nutze in seiner Zeile „Zu diesem Computer zurückholen“.",
         "title": "Dieser Zeitplan wurde auf einen Server verschoben"
       },
+      "secret_request_exists": {
+        "hint": "Bitte den Bot, ausdrücklich zu ersetzen, oder wähle einen anderen Namen. Es wurde nichts geändert.",
+        "title": "Dieser Name ist schon vergeben"
+      },
+      "secret_request_gone": {
+        "hint": "Sie wurde beantwortet, abgebrochen oder ist abgelaufen. Lass den Bot sie erneut stellen, falls sie noch gebraucht wird.",
+        "title": "Diese Anfrage ist nicht mehr offen"
+      },
       "secret_store_failed": {
         "hint": "Versuche es erneut. Wenn es weiter fehlschlägt, prüfe den Datenträger des Servers und seinen Schlüsselspeicher.",
         "title": "Der Server konnte den Schlüssel nicht speichern"

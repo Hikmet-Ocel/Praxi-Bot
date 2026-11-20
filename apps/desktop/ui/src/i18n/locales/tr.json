@@ -2151,6 +2151,14 @@
         "hint": "Orada çalışır, bu bilgisayarda dondurulmuştur. Satırındaki Bu bilgisayara geri getir düğmesini kullan.",
         "title": "Bu zamanlama sunucuya taşındı"
       },
+      "secret_request_exists": {
+        "hint": "Bottan açıkça değiştirmesini iste ya da başka bir ad seç. Hiçbir şey değiştirilmedi.",
+        "title": "Bu ad zaten kullanılıyor"
+      },
+      "secret_request_gone": {
+        "hint": "Yanıtlandı, iptal edildi ya da süresi doldu. Hâlâ gerekiyorsa botun yeniden istemesini sağla.",
+        "title": "Bu istek artık açık değil"
+      },
       "secret_store_failed": {
         "hint": "Yeniden dene. Sürerse sunucunun diskini ve gizli depolamasını kontrol et.",
         "title": "Sunucu anahtarı kaydedemedi"

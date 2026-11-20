@@ -2151,6 +2151,14 @@
         "hint": "It runs there and is frozen on this computer. Use Bring back to this computer on its row.",
         "title": "That schedule moved to a server"
       },
+      "secret_request_exists": {
+        "hint": "Ask the bot to replace it explicitly, or pick another name. Nothing was changed.",
+        "title": "This name is already taken"
+      },
+      "secret_request_gone": {
+        "hint": "It was answered, cancelled or timed out. Ask the bot to request it again if it is still needed.",
+        "title": "That request is no longer open"
+      },
       "secret_store_failed": {
         "hint": "Try again. If it keeps failing, check the server's disk and its secret store.",
         "title": "The server could not save the key"

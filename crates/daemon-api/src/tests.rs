@@ -40,6 +40,7 @@ mod memory;
 mod model_catalog;
 mod peer_knowledge;
 mod schedules;
+mod secret_requests;
 mod skills;
 mod voice;
 mod web;
