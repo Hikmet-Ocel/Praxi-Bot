@@ -2,7 +2,7 @@
 
 The Praxi desktop app provides keyboard shortcuts to help you navigate chats, control bot runs, open dialogs, and compose messages quickly without reaching for the mouse.
 
-You can also view this list directly in the app at any time by pressing **`?`** when no text field has focus, choosing **Keyboard shortcuts** from the account menu, or typing `/help` in the composer. See [Keyboard shortcuts and "What's new"](chatting-and-approvals.md#keyboard-shortcuts-and-whats-new).
+You can also view this list directly in the app at any time by pressing **`?`** when no text field has focus, choosing **Help** from the account menu, or typing `/help` in the composer. See [Keyboard shortcuts and "What's new"](chatting-and-approvals.md#keyboard-shortcuts-and-whats-new).
 
 > **CLI users:** Keyboard shortcuts apply to the desktop app. If you are interacting with Praxi from a terminal, see the [CLI reference](cli-reference.md) for command-line equivalents (`bot chat`, `bot approve`, `bot status`, etc.).
 
@@ -17,7 +17,7 @@ Global shortcuts work from anywhere in the desktop window.
 | `Ctrl/Cmd+K` | Command palette |
 | `?` | Show this list (when no text field has focus) |
 | `Ctrl/Cmd+,` | Open settings |
-| *(configurable)* | Stop all bot runs |
+| `Ctrl+Alt+Esc` *(default, configurable)* | Stop all bot runs |
 | `Ctrl/Cmd+F` | Find in this chat |
 | `Enter / Shift+Enter, Esc` | Next / previous match in the find bar, close it |
 | `Esc` | Close the side panel |
@@ -42,11 +42,10 @@ These shortcuts are active while focused in the chat composer input area.
 
 Three shortcuts (`@send`, `@newline`, and `@stop`) depend on user settings:
 
-- **Send and New Line (`sendWith`)**:
-  - **Enter to send (default)**: `Enter` sends the message, and `Shift+Enter` inserts a new line.
-  - **Ctrl/Cmd+Enter to send**: If you prefer writing multiline prompts without holding Shift, set **Send with** to `Ctrl+Enter` in settings. In this mode, `Ctrl/Cmd+Enter` sends the message, while `Enter` inserts a new line.
-- **Stop hotkey (`@stop`)**:
-  - The hotkey to stop all active bot runs is configurable in settings. When pressed, it immediately aborts active runs across all bots without requiring confirmation.
+- **Send and new line (`@send`, `@newline`)**: the **Send message** setting (Settings → General) chooses which key sends a chat message.
+  - **Enter (default)**: `Enter` sends the message, and `Shift+Enter` inserts a new line.
+  - **Ctrl+Enter**: If you prefer writing multiline prompts without holding Shift, choose `Ctrl+Enter`. Then `Ctrl/Cmd+Enter` sends the message, while `Enter` inserts a new line.
+- **Stop hotkey (`@stop`)**: the **Stop All Shortcut** setting changes the key that cancels active bot runs. The default is `Ctrl+Alt+Esc`; the presets are `Ctrl+Alt+Esc`, `Ctrl+Shift+Esc` and `Alt+Shift+S`, and you can record your own. In the Windows desktop app it also works while another app has focus; on other platforms, focus Praxi first.
 
 For more details on message composition, attachments, and run management, see [Chatting and approvals](chatting-and-approvals.md).
 
@@ -83,6 +82,8 @@ These shortcuts apply when modal dialogs, popup menus, or the command palette ar
 | `Up / Down, Enter` | Command palette: move and run |
 | `Up / Down, Home / End` | Move through popup menus |
 | `Esc` | Close a popup menu |
+| `Esc` | End the voice call |
+| `Space / Enter (hold)` | Hold to talk in a push-to-talk call |
 
 ---
 
