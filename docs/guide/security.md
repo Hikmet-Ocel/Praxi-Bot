@@ -121,6 +121,29 @@ Be realistic about the limits:
 - **Early development.** The code is young and unaudited. Do not rely on it for
   high-stakes automation yet.
 
+## Daemon process guard (defence in depth)
+
+At startup the daemon restricts its own process so that a child running as the
+same OS user (a shell command, MCP server or coding CLI) cannot read its memory,
+where the daemon keeps its owner secret:
+
+- **Windows:** the process gets a protected access list: the owner may only
+  query, wait for and terminate it. Opening it for memory read/write, handle
+  duplication or thread creation fails with "access denied".
+- **Linux:** `PR_SET_DUMPABLE=0`, so `ptrace` and `/proc/<pid>/mem` reads by the
+  same user are refused and no core dump is written.
+- **macOS and others:** nothing is done; `doctor` shows "not supported".
+
+Children start and run normally; they do not inherit the restriction. If the OS
+refuses, the daemon still starts, prints a `DEGRADED` warning and `doctor`
+(`process guard`) shows it.
+
+What this does **not** do: it is not a sandbox. A same-user child can still read
+the token file, call the loopback API with it, edit your configuration files,
+automate the UI, or use a handle that existed before the guard was applied. It
+only closes the in-memory route. Root/administrator and the debugger-privileged
+accounts are not affected.
+
 ## Good practice
 
 1. Keep the default `approve-destructive` preset; widen deliberately.
