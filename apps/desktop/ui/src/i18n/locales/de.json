@@ -1744,7 +1744,13 @@
       "starting": "Bildschirm wird gestartet …"
     },
     "live": "LIVE",
+    "mainBot": "Hauptbot: {{name}}",
     "pausedNote": "pausiert",
+    "presence": {
+      "busy": "Arbeitet",
+      "offline": "Nicht erreichbar",
+      "online": "Bereit"
+    },
     "reason": {
       "connecting": "Verbindung zu {{name}} wird hergestellt …",
       "failed": "Bildschirm konnte nicht abgerufen werden",
@@ -4034,7 +4040,6 @@
   "sidebar": {
     "apps": "Apps",
     "botsSection": "Bots",
-    "mainBot": "Haupt",
     "mainBotHint": "Haupt-Bot: der Standard für neue Chats",
     "needsYou": "Braucht dich",
     "needsYouCount": "{{count}} warten auf dich",

@@ -1744,7 +1744,13 @@
       "starting": "Starting the screen…"
     },
     "live": "LIVE",
+    "mainBot": "Main bot: {{name}}",
     "pausedNote": "paused",
+    "presence": {
+      "busy": "Working",
+      "offline": "Offline",
+      "online": "Online"
+    },
     "reason": {
       "connecting": "Connecting to {{name}}…",
       "failed": "Could not get the screen",
@@ -4034,7 +4040,6 @@
   "sidebar": {
     "apps": "Apps",
     "botsSection": "Bots",
-    "mainBot": "Main",
     "mainBotHint": "Main bot: the default for new chats",
     "needsYou": "Needs you",
     "needsYouCount": "{{count}} waiting for you",

@@ -1744,7 +1744,13 @@
       "starting": "Ekran başlatılıyor…"
     },
     "live": "CANLI",
+    "mainBot": "Ana bot: {{name}}",
     "pausedNote": "duraklatıldı",
+    "presence": {
+      "busy": "Çalışıyor",
+      "offline": "Çevrimdışı",
+      "online": "Çevrimiçi"
+    },
     "reason": {
       "connecting": "{{name}} sunucusuna bağlanılıyor…",
       "failed": "Ekran alınamadı",
@@ -4034,7 +4040,6 @@
   "sidebar": {
     "apps": "Uygulamalar",
     "botsSection": "Botlar",
-    "mainBot": "Ana",
     "mainBotHint": "Ana bot: yeni sohbetlerin varsayılanı",
     "needsYou": "Senden bekleyenler",
     "needsYouCount": "{{count}} öğe senden bekliyor",

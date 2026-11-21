@@ -833,6 +833,7 @@ function AppShell() {
               onAddSkill={() => setAddSkillOpen(true)}
               onOpenMail={() => setSettingsOpen("mail")}
               isMain={bots[0]?.id === selectedBot.id}
+              mainBotName={bots[0] ? botView(bots[0]).name : undefined}
               onMakeMain={botIds.length > 1 ? () => saveBotOrder(makeBotMain(botIds, selectedBot.id)) : undefined}
             />
           ) : null}
@@ -882,7 +883,7 @@ function AppShell() {
               return <div key={bot.id} className={styles.botRow} data-dragging={drag?.id === bot.id ? "true" : undefined} data-drop={dropEdge} {...(canReorder ? reorder.rowProps(bot.id) : { "data-bot-id": bot.id })}>
                 <SidebarItem className={styles.railItem} active={routeBotId === bot.id} title={view.name} aria-label={mini ? view.name : undefined} onClick={() => goToBot(bot.id)}>
                   <BotAvatar bot={view} size="md" state={avatarState} decorative />
-                  <div className={`${styles.botMeta} ${styles.railText}`}><span className={styles.botName}>{view.name}{index === 0 && botIds.length > 1 ? <span className={styles.mainMark} title={t("sidebar.mainBotHint")}><Star aria-hidden="true" />{t("sidebar.mainBot")}</span> : null}</span><span className={styles.botRole}>{(isMockMode() ? config.bot?.preview : undefined) ?? chatTitleLabel(latest?.title, t("bots.newChat"))}</span></div>
+                  <div className={`${styles.botMeta} ${styles.railText}`}><span className={styles.botName}><span className={styles.botNameText}>{view.name}</span>{index === 0 && botIds.length > 1 ? <span className={styles.mainMark} role="img" title={t("sidebar.mainBotHint")} aria-label={t("sidebar.mainBotHint")}><Star aria-hidden="true" /></span> : null}</span><span className={styles.botRole}>{(isMockMode() ? config.bot?.preview : undefined) ?? chatTitleLabel(latest?.title, t("bots.newChat"))}</span></div>
                   {unreadBots.has(bot.id) ? <span className={styles.unreadDot} role="img" aria-label={t("sidebar.unreadBot")} data-testid="bot-unread" /> : null}
                 </SidebarItem>
                 {canReorder && !mini && botIds.length > 1 ? <button type="button" className={styles.grip} aria-label={t("sidebar.reorderBot", { name: view.name })} title={t("sidebar.reorderHint")} {...reorder.gripProps(bot.id)}><GripVertical aria-hidden="true" /></button> : null}
