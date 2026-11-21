@@ -19,8 +19,9 @@ A backup archive includes all portable application state:
 For security, backups **never** contain sensitive credentials or host-specific runtime state:
 
 - **API keys and tokens**: Provider secrets (Gemini, Anthropic, OpenAI keys) and daemon API authentication tokens are excluded. Re-enter these keys after completing a restore (`bot secrets set <provider>`, `bot setup`, or through the desktop app settings).
-- **Paired device state**: Remote host connections and device pairings must be paired again.
-- **Browser profiles and temporary cache**: Session cookies, active browser windows, and cache files are omitted.
+- **Paired device state**: The device list, the peer identity key and the peer-node state are left out, so remote hosts and paired devices must be paired again.
+- **Browser profiles**: The browser profile folders are left out.
+- **Logs and earlier backups**: Log files, `backup-*` folders and import staging files are not part of a backup.
 
 > [!NOTE]
 > Encrypted backups are a separate feature request ([#197](https://github.com/emreocell/Praxi-Bot/issues/197)). The current commands create unencrypted archives, so store backup files securely.
@@ -33,10 +34,10 @@ Run `bot backup <FILE>` with the target destination file:
 bot backup ./praxi-backup.tar
 ```
 
-Output:
+Output (the file count and size depend on your data):
 
 ```text
-Backup written to ./praxi-backup.tar (14 files, 128450 bytes).
+Backup written to ./praxi-backup.tar (5 files, 320256 bytes).
 It does not contain API keys or tokens; enter them again after a restore.
 ```
 
@@ -63,23 +64,29 @@ bot restore ./praxi-backup.tar
 Output:
 
 ```text
-Restored 14 files from ./praxi-backup.tar (created with Praxi 0.1.0-alpha.2).
+(secret backend: OS keychain)
+Restored 5 files from ./praxi-backup.tar (created with Praxi 0.1.0).
 API keys are not part of a backup: enter them again (`bot secrets set`, or the app's settings).
 ```
+
+The first line names where `bot` keeps secrets; it can differ on your system.
 
 ### Restore requirements and flags
 
 - **Stop the daemon first**: Restoring replaces active databases. If a daemon answers on the service port, the command refuses to run:
   ```text
-  cannot restore while a daemon is running on port 4312; stop `bot serve` (or close the desktop app) and retry
+  cannot restore while a daemon is running on port 47821; stop `bot serve` (or close the desktop app) and retry
   ```
 - **Existing bots and chats (`--replace`)**: If the target installation already contains bots or chats, `bot restore` refuses to unpack by default to prevent accidental data loss:
   ```text
   this installation already has bots or chats; re-run with `--replace` to swap them for the backup (the current state is kept in a `backup-*` folder)
   ```
-  Pass `--replace` to swap the existing bots and chats for the backup. The state being replaced is safely preserved in a timestamped `backup-*` folder inside the data directory:
+  Pass `--replace` to swap the existing bots and chats for the backup. The state being replaced is preserved in a `backup-*` folder inside the data directory, and the command tells you where:
   ```sh
   bot restore ./praxi-backup.tar --replace
+  ```
+  ```text
+  The previous state was kept in <data dir>/backup-<number>.
   ```
 - **Permission policy changes (`--allow-policy-relaxation`)**: If the backup's permission policy is more permissive than the one currently active in the installation, the restore refuses:
   ```text
