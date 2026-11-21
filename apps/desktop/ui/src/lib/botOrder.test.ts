@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { makeBotMain, moveBotBy, moveBotTo, orderBots } from "./botOrder.ts";
+import { botOrderFor, makeBotMain, moveBotBy, moveBotTo, orderBots, parseHostBotOrders, withBotOrder } from "./botOrder.ts";
 
 const bots = ["a", "b", "c", "d"].map((id) => ({ id }));
 
@@ -23,4 +23,22 @@ test("the main bot is per computer: ids of another host never change who is firs
   assert.equal(orderBots(local, hostOrder)[0].id, "atlas");
   assert.deepEqual(orderBots(local, makeBotMain(["atlas", "praxi"], "praxi")).map((b) => b.id), ["praxi", "atlas"]);
   assert.deepEqual(makeBotMain(["a", "b"], "a"), ["a", "b"]);
+});
+
+test("each computer keeps its own order: Make main on a host never rewrites this computer's list", () => {
+  // Same bot ids exist on both computers (e.g. a bot named like a built-in).
+  const start = { local: ["atlas", "praxi"], hosts: {} };
+  const afterHost = withBotOrder(start, "host-1", makeBotMain(["atlas", "praxi", "laubali"], "praxi"));
+  assert.deepEqual(botOrderFor(afterHost, "local"), ["atlas", "praxi"]);
+  assert.deepEqual(botOrderFor(afterHost, "host-1"), ["praxi", "atlas", "laubali"]);
+  assert.deepEqual(botOrderFor(afterHost, "host-2"), []);
+  const afterLocal = withBotOrder(afterHost, "local", ["laubali", "atlas", "praxi"]);
+  assert.deepEqual(botOrderFor(afterLocal, "host-1"), ["praxi", "atlas", "laubali"]);
+  assert.equal(botOrderFor(afterLocal, "host-2"), botOrderFor(afterLocal, "host-3"));
+});
+
+test("parseHostBotOrders keeps only well-formed host lists", () => {
+  assert.deepEqual(parseHostBotOrders({ h: ["a", "a", 3, "b"], bad: "x", empty: [] }), { h: ["a", "b"] });
+  assert.deepEqual(parseHostBotOrders([["a"]]), {});
+  assert.deepEqual(parseHostBotOrders(null), {});
 });

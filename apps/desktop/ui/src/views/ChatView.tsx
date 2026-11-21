@@ -1777,7 +1777,11 @@ export function ChatView({
               menuOpen ? `${menuId}-${menuActive}` : undefined
             }
             placeholder={
-              active ? t("chat.placeholderBusy") : t("chat.placeholder")
+              awaitingApproval
+                ? t("chat.placeholderWaiting")
+                : active
+                  ? t("chat.placeholderBusy")
+                  : t("chat.placeholder")
             }
             aria-label={t("chat.placeholder")}
             onChange={(e) => {

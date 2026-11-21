@@ -242,7 +242,9 @@ function closeOpenItems(items: TimelineItem[]): TimelineItem[] {
     i.kind === "question" && i.answer === undefined
       ? { ...i, closed: true }
       : i.kind === "tool" &&
-          (i.status === "awaiting_approval" || i.status === "requested")
+          (i.status === "awaiting_approval" ||
+            i.status === "requested" ||
+            i.status === "running")
         ? { ...i, status: "expired" as const }
         : i
   );

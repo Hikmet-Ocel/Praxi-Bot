@@ -10,21 +10,26 @@ pub const REDACTED: &str = "[REDACTED]";
 /// Values shorter than this are not registered (masking "abc" would wreck text).
 const MIN_SECRET_LEN: usize = 6;
 
-/// Always-on shapes of common credentials.
-const PATTERNS: &[&str] = &[
+/// Always-on shapes of common credentials as `(id, regex)`. The ids are
+/// stable names that [`crate::detect`] maps to kinds; the redactor only uses
+/// the regexes.
+pub(crate) const SHAPES: &[(&str, &str)] = &[
     // OpenAI / Anthropic / OpenRouter style keys.
-    r"sk-[A-Za-z0-9_-]{16,}",
+    ("openai_style", r"sk-[A-Za-z0-9_-]{16,}"),
     // Google API keys.
-    r"AIza[0-9A-Za-z_-]{30,}",
+    ("google_api", r"AIza[0-9A-Za-z_-]{30,}"),
     // GitHub tokens.
-    r"gh[pousr]_[A-Za-z0-9]{30,}",
-    r"github_pat_[A-Za-z0-9_]{30,}",
+    ("github", r"gh[pousr]_[A-Za-z0-9]{30,}"),
+    ("github", r"github_pat_[A-Za-z0-9_]{30,}"),
     // Slack tokens.
-    r"xox[abprs]-[A-Za-z0-9-]{10,}",
+    ("slack", r"xox[abprs]-[A-Za-z0-9-]{10,}"),
     // NVIDIA keys.
-    r"nvapi-[A-Za-z0-9_-]{20,}",
+    ("nvidia", r"nvapi-[A-Za-z0-9_-]{20,}"),
     // JSON Web Tokens.
-    r"eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}",
+    (
+        "jwt",
+        r"eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}",
+    ),
 ];
 
 /// `value` plus its JSON-escaped, URL-encoded and base64 (standard and
@@ -112,9 +117,9 @@ impl Redactor {
     pub fn new() -> Self {
         Self {
             values: Vec::new(),
-            patterns: PATTERNS
+            patterns: SHAPES
                 .iter()
-                .map(|p| Regex::new(p).expect("built-in pattern is valid"))
+                .map(|(_, p)| Regex::new(p).expect("built-in pattern is valid"))
                 .collect(),
         }
     }

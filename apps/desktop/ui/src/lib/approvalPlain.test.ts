@@ -45,6 +45,8 @@ test("the approval reason and action render as short Turkish sentences, never th
   const reason = plain.reasonLine(egress, t)!;
   assert.match(reason, /Bot şunu okudu: pencere msedge\.exe, pencere chrome\.exe, komut çıktısı/);
   assert.match(reason, /program başlatmak/);
+  assert.match(reason, /hedef: komut satırı/, "the daemon's English target id is translated");
+  assert.doesNotMatch(reason, /the shell/);
   assert.doesNotMatch(reason, /this run read|file shell_run/);
   const action = plain.actionText(
     "shell_run",
@@ -52,9 +54,10 @@ test("the approval reason and action render as short Turkish sentences, never th
     { computer: null, serverName: "Praxi host" },
     t
   )!;
-  assert.equal(action, "Praxi host sunucusu üzerinde komut çalıştır: which chromium || which google-chrome");
+  assert.equal(action, "Praxi host sunucusu üzerinde şu komutu çalıştır:");
+  assert.equal(plain.actionCommand("shell_run", { command: "which chromium || which google-chrome" })?.text, "which chromium || which google-chrome");
   await i18n.changeLanguage("en");
-  assert.match(plain.actionText("shell_run", { command: "ls" }, { computer: null, serverName: "Praxi host" }, t)!, /^Run a command on the Praxi host server: ls/);
+  assert.match(plain.actionText("shell_run", { command: "ls" }, { computer: null, serverName: "Praxi host" }, t)!, /^Run this command on the Praxi host server:$/);
 });
 
 test("an older daemon without a reason code keeps its own text", async () => {
@@ -93,21 +96,39 @@ test("every pc_* tool reads as a sentence about YOUR computer, in both languages
   }
   await i18n.changeLanguage("en");
   const t = ((k: string, v?: Record<string, unknown>) => i18n.t(k, v)) as import("./approvalPlain.ts").T;
-  assert.equal(plain.actionText("pc_shell_run", { command: "dir" }, w, t), "Run a command on YOUR computer: dir");
+  assert.equal(plain.actionText("pc_shell_run", { command: "dir" }, w, t), "Run this command on YOUR computer:");
+  assert.equal(plain.actionCommand("pc_shell_run", { command: "dir" })?.text, "dir");
 });
 
 test("a multi-line command is shown whole and pc_* page and screen actions are specific", async () => {
   await i18n.changeLanguage("en");
   const t = ((k: string, v?: Record<string, unknown>) => i18n.t(k, v)) as import("./approvalPlain.ts").T;
   const w = { computer: null, serverName: "Praxi host" };
-  const shell = plain.actionText("pc_shell_run", { command: "dir\nRemove-Item C:/work -Recurse" }, w, t)!;
-  assert.match(shell, /dir ⏎ Remove-Item C:\/work -Recurse/);
-  const long = plain.actionText("pc_shell_run", { command: "x".repeat(500) }, w, t)!;
-  assert.ok(long.endsWith("…"), long);
+  const shell = plain.actionCommand("pc_shell_run", { command: "dir\nRemove-Item C:/work -Recurse" })!.text;
+  assert.equal(shell, "dir\nRemove-Item C:/work -Recurse", "every line stays visible");
+  const long = plain.actionCommand("pc_shell_run", { command: "x".repeat(2500) })!;
+  assert.ok(long.text.endsWith("…"), long.text.slice(-5));
+  assert.equal(long.shortened, true);
+  assert.equal(plain.actionCommand("pc_shell_run", { command: "x".repeat(2000) })!.shortened, false);
+  assert.equal(plain.actionCommand("browser_open", { command: "x" }), null);
   assert.match(plain.actionText("pc_browser_click", { ref: "e12" }, w, t)!, /Click element e12/);
   assert.match(plain.actionText("pc_browser_fill", { ref: "e3", text: "hello" }, w, t)!, /e3.*hello/);
   assert.match(plain.actionText("pc_browser_tabs", { switch_to: 2 }, w, t)!, /tab 2/);
   assert.match(plain.actionText("pc_desktop_type", { text: "secret plan" }, w, t)!, /secret plan/);
   assert.match(plain.actionText("pc_desktop_key", { keys: ["ctrl", "s"] }, w, t)!, /ctrl\+s/);
   assert.match(plain.actionText("pc_desktop_launch", { executable: "cmd.exe", args: ["/c", "del x"] }, w, t)!, /cmd\.exe \/c del x/);
+});
+
+test("known internal target ids read as words in every language, a site stays as it is", async () => {
+  for (const lang of ["en", "tr", "de"]) {
+    await i18n.changeLanguage(lang);
+    const t = ((k: string, v?: Record<string, unknown>) => i18n.t(k, v)) as import("./approvalPlain.ts").T;
+    for (const id of ["the shell", "a script", "the browser", "the desktop", "the mailbox", "mailbox work", "this bot's scheduler"]) {
+      const text = plain.hostText(id, t);
+      assert.ok(text && !text.startsWith("chat.") && !text.includes("{{"), `${lang} ${id}: ${text}`);
+      if (lang !== "en") assert.notEqual(text, id);
+    }
+    assert.equal(plain.hostText("example.com", t), "example.com");
+  }
+  await i18n.changeLanguage("en");
 });

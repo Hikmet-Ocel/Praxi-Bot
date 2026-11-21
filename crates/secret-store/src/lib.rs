@@ -7,9 +7,12 @@
 //! - [`SecretRef`]: a *name only* handle. Config files and the agent loop hold
 //!   refs; [`resolve`] turns one into a [`SecretValue`] and must only be called
 //!   at the provider / MCP boundary (ADR-0012).
+//! - [`detect_secrets`]: precision-first detection of a pasted credential in a
+//!   chat message (see `docs/design/secret-detection.md`).
 //! - [`Redactor`]: masks known secret values and common key shapes in any
 //!   string (tool output, logs, events).
 
+mod detect;
 mod error;
 mod file;
 mod fill;
@@ -23,6 +26,7 @@ mod secret;
 mod transaction;
 mod wipe;
 
+pub use detect::{Confidence, SecretCandidate, SecretKind, detect_secrets, placeholder};
 pub use error::SecretError;
 pub use file::{EncryptedFileStore, KdfParams};
 pub use fill::{

@@ -217,7 +217,7 @@ const rows: Row[] = [
     handBack: (s) => s.lastError?.code === "release_interrupted", // told it is gone
     unpause: (_s, a) => a.banner.includes("clear_pause") && a.dock.includes("clear_pause"),
     expectDock: ["stop", "clear_pause"],
-    expectPanel: ["clear_pause"],
+    expectPanel: [],
     expectBanner: ["clear_pause", "open_screen"]
   },
   {
@@ -228,7 +228,7 @@ const rows: Row[] = [
     handBack: (_s, a) => a.dock.includes("reacquire"), // reacquire, then Bitirdim
     unpause: (_s, a) => a.dock.includes("clear_pause") && a.banner.includes("clear_pause"),
     expectDock: ["stop", "reacquire", "clear_pause"],
-    expectPanel: ["reacquire", "clear_pause"],
+    expectPanel: ["reacquire"],
     expectBanner: ["clear_pause", "open_screen"]
   },
   {
@@ -239,7 +239,7 @@ const rows: Row[] = [
     handBack: () => true, // not applicable: copy says clear the pause
     unpause: (_s, a) => a.dock.includes("clear_pause") && a.banner.includes("clear_pause"),
     expectDock: ["stop", "clear_pause"],
-    expectPanel: ["clear_pause"],
+    expectPanel: [],
     expectBanner: ["clear_pause", "open_screen"]
   },
   {
@@ -250,7 +250,7 @@ const rows: Row[] = [
     handBack: (_s, a) => a.dock.includes("reacquire"),
     unpause: (_s, a) => a.banner.includes("clear_pause"),
     expectDock: ["stop", "reacquire", "clear_pause"],
-    expectPanel: ["reacquire", "clear_pause"],
+    expectPanel: ["reacquire"],
     expectBanner: ["clear_pause", "open_screen"]
   },
   {

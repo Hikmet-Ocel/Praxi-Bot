@@ -221,11 +221,11 @@ type DaemonData = Pick<
  * daemon and (while selected) a paired host each run their own copy, so the local
  * safety machinery never depends on which computer the views are showing.
  */
-function useDaemonData(conn: Connection | null): DaemonData {
+function useDaemonData(conn: Connection | null, computerId: string): DaemonData {
   const [health, setHealth] = useState<Health | null>(null);
   const [eventsConnected, setEventsConnected] = useState(false);
   const [rawBots, setBots] = useState<Bot[]>([]);
-  const botOrder = useBotOrder();
+  const botOrder = useBotOrder(computerId);
   const bots = useMemo(() => orderBots(rawBots, botOrder), [rawBots, botOrder]);
   const [chats, setChats] = useState<Chat[]>([]);
   const chatsRef = useRef<Chat[]>(chats);
@@ -492,7 +492,7 @@ export function DaemonProvider({ children }: { children: ReactNode }) {
   const [attempt, setAttempt] = useState(0);
   const [home, setHome] = useState<Home>(LOCAL_HOME);
   const [workLocalNow, setWorkLocalNow] = useState(false);
-  const data = useDaemonData(localConn);
+  const data = useDaemonData(localConn, LOCAL_COMPUTER);
 
   // The local daemon's own client: it owns the pairing store and the channels.
   const localClient = useMemo(
@@ -862,7 +862,7 @@ export function DaemonProvider({ children }: { children: ReactNode }) {
 export function HostSession({ children }: { children: ReactNode }) {
   const local = useDaemon();
   const { hostConn, hostList, hostError, activeComputerId } = local;
-  const data = useDaemonData(hostConn);
+  const data = useDaemonData(hostConn, activeComputerId);
   const link =
     hostList?.hosts.find((h) => h.id === activeComputerId) ?? null;
   const rawHostState = useMemo<HostUiState>(() => {

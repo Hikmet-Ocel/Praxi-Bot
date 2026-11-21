@@ -6,14 +6,9 @@ import {
   normalizeAppearance,
   type AppearanceSettings
 } from "../lib/appearance";
-import { parseBotOrder } from "../lib/botOrder";
+import { parseBotOrder, parseHostBotOrders } from "../lib/botOrder";
 import { defaultWindowFrame } from "../lib/windowChrome";
 
-/**
- * Stored under a new key: the old "windowFrame" held `true` for everyone (the
- * former default), which would keep Windows users on the native title bar.
- */
-const WINDOW_FRAME_KEY = "windowFrameChoice";
 import { DEFAULT_VOICE_RATE, parseVoiceName, parseVoiceRate } from "../lib/voicePrefs";
 import { type MessageTimes, parseMessageTimes } from "../lib/messageTime";
 import {
@@ -22,6 +17,12 @@ import {
   parseSendWith,
   type SendWith
 } from "../lib/settingsPrefs";
+
+/**
+ * Stored under a new key: the old "windowFrame" held `true` for everyone (the
+ * former default), which would keep Windows users on the native title bar.
+ */
+const WINDOW_FRAME_KEY = "windowFrameChoice";
 
 export interface AppSettings extends AppearanceSettings {
   backgroundUrl: string;
@@ -56,6 +57,8 @@ export interface AppSettings extends AppearanceSettings {
   computerTarget: ComputerTarget;
   /** Sidebar bot order (bot ids); the first bot is the main bot. Empty = daemon order. */
   botOrder: string[];
+  /** Same, for each paired host (host id -> bot ids): every computer has its own main bot. */
+  hostBotOrders: Record<string, string[]>;
   /** OS speech voice used to read replies aloud; "" = automatic (matches the UI language). */
   voiceName: string;
   /** Speaking speed of read-aloud replies (0.5 - 2). */
@@ -89,6 +92,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   messageTimes: "minutes",
   computerTarget: "this-pc",
   botOrder: [],
+  hostBotOrders: {},
   voiceName: "",
   voiceRate: DEFAULT_VOICE_RATE,
   speakReplies: false,
@@ -141,6 +145,7 @@ export function loadSettingsSync(): AppSettings | null {
       computerTarget: parseComputerTarget(parsed.computerTarget),
       messageTimes: parseMessageTimes(parsed.messageTimes),
       botOrder: parseBotOrder(parsed.botOrder),
+      hostBotOrders: parseHostBotOrders(parsed.hostBotOrders),
       voiceName: parseVoiceName(parsed.voiceName),
       voiceRate: parseVoiceRate(parsed.voiceRate),
       speakReplies: parsed.speakReplies === true,
@@ -218,6 +223,7 @@ export async function loadSettings(): Promise<AppSettings> {
       );
 
       const botOrder = parseBotOrder(await store.get<unknown>("botOrder"));
+      const hostBotOrders = parseHostBotOrders(await store.get<unknown>("hostBotOrders"));
       const voiceName = parseVoiceName(await store.get<string>("voiceName"));
       const voiceRate = parseVoiceRate(await store.get<number>("voiceRate"));
       const speakReplies = (await store.get<boolean>("speakReplies")) === true;
@@ -247,6 +253,7 @@ export async function loadSettings(): Promise<AppSettings> {
         messageTimes,
         computerTarget,
         botOrder,
+        hostBotOrders,
         voiceName,
         voiceRate,
         speakReplies,
@@ -294,6 +301,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
       await store.set("messageTimes", settings.messageTimes);
       await store.set("computerTarget", settings.computerTarget);
       await store.set("botOrder", settings.botOrder);
+      await store.set("hostBotOrders", settings.hostBotOrders);
       await store.set("voiceName", settings.voiceName);
       await store.set("voiceRate", settings.voiceRate);
       await store.set("speakReplies", settings.speakReplies);

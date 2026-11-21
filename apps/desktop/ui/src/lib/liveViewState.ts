@@ -1136,7 +1136,7 @@ export function visibleActions(
     if (describeRecoveryPrompt(state, control)?.mode === "reacquire") {
       out.panel.push("reacquire");
     }
-    out.panel.push("clear_pause");
+    // "Clear pause" lives in the banner (always mounted): a second button in the panel is a duplicate.
   } else {
     out.panel.push("open_screen");
   }

@@ -1,26 +1,39 @@
 import { useSyncExternalStore } from "react";
-import { parseBotOrder } from "../lib/botOrder";
+import { botOrderFor, parseBotOrder, parseHostBotOrders, type BotOrders } from "../lib/botOrder";
 import { loadSettingsSync } from "./settingsStore";
 
 /**
- * Live copy of `AppSettings.botOrder` for providers that sit above the settings state
- * (DaemonProvider sorts `bots` with it).  AppShell pushes every settings change in here.
+ * Live copy of the per-computer bot orders (`AppSettings.botOrder` for this computer,
+ * `AppSettings.hostBotOrders` for paired hosts) for providers that sit above the settings state
+ * (the daemon data hook sorts `bots` with it).  AppShell pushes every settings change in here.
  */
-let order: readonly string[] = parseBotOrder(loadSettingsSync()?.botOrder);
+const initial = loadSettingsSync();
+let orders: BotOrders = {
+  local: parseBotOrder(initial?.botOrder),
+  hosts: parseHostBotOrders(initial?.hostBotOrders)
+};
 const listeners = new Set<() => void>();
 
-export function setBotOrderSnapshot(next: readonly string[]): void {
-  if (next.length === order.length && next.every((id, i) => id === order[i])) return;
-  order = next;
+function sameList(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
+export function setBotOrderSnapshot(local: readonly string[], hosts: Readonly<Record<string, readonly string[]>> = {}): void {
+  const hostKeys = new Set([...Object.keys(orders.hosts), ...Object.keys(hosts)]);
+  const same =
+    sameList(orders.local, local) &&
+    [...hostKeys].every((k) => sameList(orders.hosts[k] ?? [], hosts[k] ?? []));
+  if (same) return;
+  orders = { local, hosts };
   listeners.forEach((l) => l());
 }
 
-export function useBotOrder(): readonly string[] {
+export function useBotOrder(computerId: string): readonly string[] {
   return useSyncExternalStore(
     (cb) => {
       listeners.add(cb);
       return () => listeners.delete(cb);
     },
-    () => order
+    () => botOrderFor(orders, computerId)
   );
 }

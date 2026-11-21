@@ -411,14 +411,22 @@ function AppShell() {
   };
 
   // Sidebar order: settings hold the ids, the daemon context sorts `bots` with them (top = main bot).
+  // Each computer keeps its OWN order (and so its own main bot): writing one never touches the other.
   useEffect(() => {
-    setBotOrderSnapshot(settings.botOrder);
-  }, [settings.botOrder]);
+    setBotOrderSnapshot(settings.botOrder, settings.hostBotOrders);
+  }, [settings.botOrder, settings.hostBotOrders]);
+  const saveBotOrder = (next: string[]) => {
+    updateSettings(
+      activeComputerId === LOCAL_COMPUTER
+        ? { botOrder: next }
+        : { hostBotOrders: { ...settings.hostBotOrders, [activeComputerId]: next } }
+    );
+  };
   const [orderNote, setOrderNote] = useState("");
   const botIds = useMemo(() => bots.map((b) => b.id), [bots]);
   const reorder = useBotReorder(
     botIds,
-    (botOrder) => updateSettings({ botOrder }),
+    saveBotOrder,
     (id, pos) => setOrderNote(t("sidebar.reorderMoved", { name: bots.find((b) => b.id === id)?.name ?? "", pos }))
   );
 
@@ -829,7 +837,7 @@ function AppShell() {
               onAddSkill={() => setAddSkillOpen(true)}
               onOpenMail={() => setSettingsOpen("mail")}
               isMain={bots[0]?.id === selectedBot.id}
-              onMakeMain={botIds.length > 1 ? () => updateSettings({ botOrder: makeBotMain(botIds, selectedBot.id) }) : undefined}
+              onMakeMain={botIds.length > 1 ? () => saveBotOrder(makeBotMain(botIds, selectedBot.id)) : undefined}
             />
           ) : null}
         </SidePanel>

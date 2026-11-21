@@ -110,7 +110,8 @@ export function groupRunItems(
       endMs = Math.max(endMs, stepEnd(s));
       if (s.kind === "tool") {
         const st = s.tool.status;
-        if (st === "error" || st === "denied" || st === "expired") {
+        // A call the owner refused is their decision, not a failed step.
+        if (st === "error" || st === "expired") {
           problems++;
         }
         if (st === "requested" || st === "running") {

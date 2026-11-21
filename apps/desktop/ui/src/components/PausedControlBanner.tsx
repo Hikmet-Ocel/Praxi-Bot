@@ -1,7 +1,6 @@
 import { PauseCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "ui";
-import { liveViewErrorText } from "../lib/liveViewError";
 import { foreignPausedTakeover, visibleActions } from "../lib/liveViewState";
 import { requestStop } from "../state/appStop";
 import { useLiveView } from "../state/LiveViewContext";
@@ -33,11 +32,6 @@ export function PausedControlBanner() {
         <span className={styles.text}>
           <strong>{t("liveView.pausedBanner.title")}</strong>
           <span>{t("liveView.pausedBanner.body")}</span>
-          {state.lastError ? (
-            <span role="alert" data-testid="paused-banner-error">
-              {liveViewErrorText(state.lastError)}
-            </span>
-          ) : null}
         </span>
         <span className={styles.actions}>
           {actions.includes("clear_pause") ? (
