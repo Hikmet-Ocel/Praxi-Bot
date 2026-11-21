@@ -3,6 +3,7 @@
 //! daemon's submit route (tested in daemon-api); here the test plays that route.
 
 use secret_store::{FillSecrets, MemoryStore};
+use std::fmt::Write as _;
 
 use super::*;
 
@@ -50,7 +51,6 @@ async fn the_owner_answers_and_the_model_sees_only_stored() {
         lp.claim_secret_request(card.call_id).is_none(),
         "single use"
     );
-    let _the_value_goes_to_the_vault_not_here = CANARY;
     lp.finish_secret_request(card.call_id, true, env.user)
         .unwrap();
     assert_eq!(lp.wait(run).await.unwrap(), RunState::Succeeded);
@@ -63,7 +63,7 @@ async fn the_owner_answers_and_the_model_sees_only_stored() {
     while let Ok(i) = rx.try_recv() {
         all.push_str(&serde_json::to_string(&i.envelope.event).unwrap());
     }
-    all.push_str(&format!("{:?}", env.storage.list_audit(env.user).unwrap()));
+    let _ = write!(all, "{:?}", env.storage.list_audit(env.user).unwrap());
     assert!(!all.contains(CANARY));
     let audit = format!("{:?}", env.storage.list_audit(env.user).unwrap());
     assert!(audit.contains("secret_request.requested") && audit.contains("secret_request.stored"));

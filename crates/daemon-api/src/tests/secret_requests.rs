@@ -91,7 +91,7 @@ async fn the_owner_submits_and_the_value_only_reaches_the_vault() {
     // A token holder is not the owner: refused, and the form keeps waiting.
     let denied = call_token_only(&r.t, Method::POST, &path, Some(body.clone())).await;
     assert_eq!(denied.status, StatusCode::FORBIDDEN);
-    assert_eq!(denied.json()["code"], "owner_key_required");
+    assert_eq!(denied.json()["error"]["code"], "owner_key_required");
     assert!(!r.secrets.exists("login/example/password"));
 
     // A wrong shape is refused without quoting the body and keeps the form open.
@@ -138,7 +138,7 @@ async fn the_owner_submits_and_the_value_only_reaches_the_vault() {
     // Single use.
     let again = call(&r.t, Method::POST, &path, Some(body)).await;
     assert_eq!(again.status, StatusCode::NOT_FOUND);
-    assert_eq!(again.json()["code"], "secret_request_gone");
+    assert_eq!(again.json()["error"]["code"], "secret_request_gone");
 }
 
 /// Guard: cancel stores nothing and a name created while the form was open is
@@ -166,7 +166,7 @@ async fn cancel_leaves_nothing_and_an_existing_name_is_not_replaced_silently() {
     )
     .await;
     assert_eq!(clash.status, StatusCode::CONFLICT);
-    assert_eq!(clash.json()["code"], "secret_request_exists");
+    assert_eq!(clash.json()["error"]["code"], "secret_request_exists");
     assert_eq!(
         r.secrets
             .resolve_value("login/example/password")
@@ -181,7 +181,7 @@ async fn cancel_leaves_nothing_and_an_existing_name_is_not_replaced_silently() {
     wait_state(&r.t, &run, "succeeded").await;
     assert!(!r.secrets.exists("login/example/username"));
     let again = call(&r.t, Method::POST, &format!("{path}/cancel"), None).await;
-    assert_eq!(again.json()["code"], "secret_request_gone");
+    assert_eq!(again.json()["error"]["code"], "secret_request_gone");
 }
 
 /// Guard: a paired device never reaches the routes (the peer router matches the prefix).
