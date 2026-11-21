@@ -73,6 +73,7 @@ Notable additions in the `0.1.0` desktop, CLI, and evaluation surface:
 | Back up and restore your data | [Backup and restore](backup-and-restore.md) |
 | Understand what protects you | [Security model](security.md) |
 | Look up a term | [Glossary](glossary.md) |
+| See keyboard shortcuts | [Keyboard shortcuts](keyboard-shortcuts.md) |
 | Something does not work | [Troubleshooting](troubleshooting.md), [FAQ](faq.md) |
 
 ## The pieces
