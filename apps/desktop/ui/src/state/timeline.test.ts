@@ -554,3 +554,12 @@ test("partial restore persists a warning and the safety recovery id", () => {
   assert.equal(notice?.i18nKey, "chat.notice.checkpointRestorePartial");
   assert.equal(notice?.values?.safetyId, "cp-safe");
 });
+
+test("a run that ends closes an approved step still running, so no spinner outlives the run", () => {
+  let s = started();
+  s = feed(s, { type: "tool_call_requested", run_id: RUN, call_id: "c1", tool_name: "browser_open", input: { url: "https://google.com" } });
+  s = feed(s, { type: "tool_call_approved", run_id: RUN, call_id: "c1", approved_by: "u" });
+  assert.equal((s.runs[RUN].items[0] as ToolItem).status, "running");
+  s = feed(s, { type: "run_finished", run_id: RUN, error: "cancelled" });
+  assert.equal((s.runs[RUN].items[0] as ToolItem).status, "expired");
+});

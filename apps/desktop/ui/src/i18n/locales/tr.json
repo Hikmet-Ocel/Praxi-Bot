@@ -854,6 +854,7 @@
       "waiting": "Onayını bekliyor"
     },
     "pausedIdle": "Kaynak tasarrufu için duraklatıldı — devam etmek için tıkla",
+    "permissionLabel": "İzin düzeyi: {{level}}",
     "profile": "Bot profili",
     "runsOnHost": "{{name}} sunucusunda çalışır",
     "runsOnLocal": "Bu bilgisayarda çalışır",
@@ -992,6 +993,7 @@
         },
         "tools": "Araçlar"
       },
+      "commandShortened": "Komut kısaltıldı: yalnızca ilk {{shown}} karakter gösteriliyor.",
       "computer": "Bu işlem {{kind}} “{{name}}” üzerinde çalışır (kimlik {{id}}).",
       "control": {
         "button": "Bu görev: {{program}}",
@@ -1019,16 +1021,20 @@
       "countdown": "{{seconds}} sn içinde otomatik reddedilir",
       "deny": "Reddet",
       "egress": {
+        "hidden": "{{hidden}} görünmeyen karakter <U+XXXX> olarak gösterilir",
         "host": "Hedef: {{host}}",
         "large": "Bu içerik kısa kartta incelenemeyecek kadar büyük ({{bytes}} bayt). Onaylamadan önce tam metni açıp sonuna kadar kaydır.",
         "payload": {
-          "body": "Giden veri (tamamı gösterilir):",
+          "body": "Gönderilecek veri (tamamı gösterilir):",
           "query": "Giden sorgu (tamamı gösterilir):",
           "url": "Giden adres (tamamı gösterilir):"
         },
         "read": "Bu çalışma şunu okudu: {{list}}",
-        "reviewFull": "İçeriğin tamamını incele",
-        "size": "{{lines}} satır, {{chars}} karakter, {{hidden}} yazdırılmayan karakter <U+XXXX> olarak gösterilir"
+        "reviewFull": "İçeriğin tamamını incele"
+      },
+      "input": {
+        "label": "{{name}} aracının alacağı tam veri",
+        "shortened": "Kısaltıldı: yalnızca ilk {{shown}} karakter gösteriliyor."
       },
       "memory": {
         "always": "{{target}} için bu botta her zaman izin ver",
@@ -1061,15 +1067,26 @@
           "pcScreenKeys": "SENİN bilgisayarında {{keys}} tuşlarına bas",
           "pcScreenLook": "SENİN bilgisayarının ekranına bak",
           "pcScreenType": "SENİN bilgisayarında yaz: {{text}}",
-          "pcShell": "SENİN bilgisayarında komut çalıştır: {{command}}",
+          "pcShell": "SENİN bilgisayarında şu komutu çalıştır:",
           "pcWrite": "SENİN bilgisayarında dosya yaz: {{path}}",
           "screen": "{{where}} ekranını kullan",
-          "shell": "{{where}} üzerinde komut çalıştır: {{command}}"
+          "shell": "{{where}} üzerinde şu komutu çalıştır:"
         },
         "details": "Ayrıntılar",
+        "host": {
+          "bots": "botların",
+          "browser": "tarayıcı",
+          "desktop": "masaüstü",
+          "mailbox": "posta kutusu",
+          "mailboxNamed": "posta kutusu {{name}}",
+          "memory": "bu botun hafızası",
+          "scheduler": "bu botun zamanlayıcısı",
+          "script": "bir betik",
+          "shell": "komut satırı"
+        },
         "reason": {
-          "egress": "Bot şunu okudu: {{list}}. Şimdi {{host}} adresine veri göndermek istiyor.",
-          "egressExecutes": "Bot şunu okudu: {{list}}. Şimdi {{host}} adresine veri göndermek ve bir program başlatmak istiyor; program başlatan çağrılar her seferinde sorar.",
+          "egress": "Bot şunu okudu: {{list}}. Şimdi veri göndermek istiyor (hedef: {{host}}).",
+          "egressExecutes": "Bot şunu okudu: {{list}}. Şimdi veri göndermek ve bir program başlatmak istiyor (hedef: {{host}}); program başlatan çağrılar her seferinde sorar.",
           "unknownSources": "güvenilmeyen ya da özel içerik"
         },
         "source": {
@@ -1142,6 +1159,7 @@
       "details": "Ayrıntılar",
       "problems_one": "{{count}} adım başarısız",
       "problems_other": "{{count}} adım başarısız",
+      "slow": "Normalden uzun sürüyor",
       "started": "Başlangıç {{start}}",
       "startedFinished": "Başlangıç {{start}} · bitiş {{end}}",
       "thought": "{{duration}} düşündü",
@@ -1270,6 +1288,7 @@
     "pendingPinned": "Kararın bekleniyor. Kart mesaj kutusunun üstünde.",
     "placeholder": "Mesaj yaz…  / komutlar · @ botlar",
     "placeholderBusy": "Bot çalışıyor. Yazarsan mesaj sıraya girer…",
+    "placeholderWaiting": "Onayını bekliyor. Yazdığın mesaj sıraya girer…",
     "question": {
       "answer": "Yanıtla",
       "answered": "Yanıtın: {{answer}}",

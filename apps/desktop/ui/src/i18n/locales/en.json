@@ -854,6 +854,7 @@
       "waiting": "Waiting for your approval"
     },
     "pausedIdle": "Paused to save resources - click to resume",
+    "permissionLabel": "Permission level: {{level}}",
     "profile": "Bot profile",
     "runsOnHost": "Runs on {{name}} (host)",
     "runsOnLocal": "Runs on this computer",
@@ -992,6 +993,7 @@
         },
         "tools": "Tools"
       },
+      "commandShortened": "Command shortened: only the first {{shown}} characters are shown.",
       "computer": "This action runs on {{kind}} \"{{name}}\" (id {{id}}).",
       "control": {
         "button": "This task: {{program}}",
@@ -1019,6 +1021,7 @@
       "countdown": "Auto-deny in {{seconds}} s",
       "deny": "Deny",
       "egress": {
+        "hidden": "{{hidden}} invisible characters are shown as <U+XXXX>",
         "host": "Destination: {{host}}",
         "large": "This payload is too large for the compact card ({{bytes}} bytes). Open the full text and scroll to the end before approving.",
         "payload": {
@@ -1027,8 +1030,11 @@
           "url": "Outgoing URL (shown in full):"
         },
         "read": "This run read: {{list}}",
-        "reviewFull": "Review full payload",
-        "size": "{{lines}} lines, {{chars}} characters, {{hidden}} non-printing characters shown as <U+XXXX>"
+        "reviewFull": "Review full payload"
+      },
+      "input": {
+        "label": "Exactly what {{name}} will receive",
+        "shortened": "Shortened: only the first {{shown}} characters are shown."
       },
       "memory": {
         "always": "Always allow {{target}} for this bot",
@@ -1061,12 +1067,23 @@
           "pcScreenKeys": "Press {{keys}} on YOUR computer",
           "pcScreenLook": "Look at the screen of YOUR computer",
           "pcScreenType": "Type on YOUR computer: {{text}}",
-          "pcShell": "Run a command on YOUR computer: {{command}}",
+          "pcShell": "Run this command on YOUR computer:",
           "pcWrite": "Write a file on YOUR computer: {{path}}",
           "screen": "Use the screen of {{where}}",
-          "shell": "Run a command on {{where}}: {{command}}"
+          "shell": "Run this command on {{where}}:"
         },
         "details": "Details",
+        "host": {
+          "bots": "your bots",
+          "browser": "the browser",
+          "desktop": "the desktop",
+          "mailbox": "the mailbox",
+          "mailboxNamed": "mailbox {{name}}",
+          "memory": "this bot's memory",
+          "scheduler": "this bot's scheduler",
+          "script": "a script",
+          "shell": "the command line"
+        },
         "reason": {
           "egress": "The bot read {{list}} and now wants to send data to {{host}}.",
           "egressExecutes": "The bot read {{list}} and now wants to send data to {{host}} and start a program. Calls that start a program always ask.",
@@ -1142,6 +1159,7 @@
       "details": "Details",
       "problems_one": "{{count}} step failed",
       "problems_other": "{{count}} steps failed",
+      "slow": "Taking longer than usual",
       "started": "Started {{start}}",
       "startedFinished": "Started {{start}} · finished {{end}}",
       "thought": "Thought for {{duration}}",
@@ -1270,6 +1288,7 @@
     "pendingPinned": "Waiting for your decision. The card is above the message box.",
     "placeholder": "Message…  / commands · @ bots",
     "placeholderBusy": "The bot is working. Type to queue a message…",
+    "placeholderWaiting": "Waiting for your approval. A message you type is queued…",
     "question": {
       "answer": "Answer",
       "answered": "You answered: {{answer}}",

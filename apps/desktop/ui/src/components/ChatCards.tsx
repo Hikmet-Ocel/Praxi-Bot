@@ -39,12 +39,12 @@ import {
   type ScheduleApprovalDetails
 } from "../lib/approvalDetails";
 import { brandIcon } from "../lib/brandIcons";
-import { describeTool, isSendTool } from "../lib/toolLabels";
+import { describeTool, isSendTool, resolveToolCall } from "../lib/toolLabels";
 import { StepIcon } from "./StepIcon";
 import formStyles from "./Form.module.css";
 import styles from "./ChatCards.module.css";
 import { humanLine, humanToolError } from "../lib/humanError";
-import { actionText, reasonLine, type T } from "../lib/approvalPlain";
+import { COMMAND_LIMIT, INPUT_LIMIT, actionArguments, actionCommand, actionText, hostText, reasonLine, sourceText, type T } from "../lib/approvalPlain";
 import { ErrorNotice } from "./ErrorNotice";
 
 const brandName = (name: string): string | null => {
@@ -280,21 +280,15 @@ function EgressApprovalBody({ d, onReviewed }: {
   const kind = d.payloadKind === "query" || d.payloadKind === "url" ? d.payloadKind : "body";
   return (
     <div data-testid="approval-egress">
-      <p className={styles.bodyLabel}>{t("chat.approval.egress.host", { host: d.host })}</p>
+      <p className={styles.bodyLabel}>{t("chat.approval.egress.host", { host: hostText(d.host, t as unknown as T) })}</p>
       {d.read.length > 0 ? (
         <p className={styles.bodyLabel}>
-          {t("chat.approval.egress.read", { list: d.read.join(", ") })}
+          {t("chat.approval.egress.read", { list: d.read.map((r) => sourceText(r, t as unknown as T)).join(", ") })}
         </p>
       ) : null}
       <span className={styles.bodyLabel}>{t(`chat.approval.egress.payload.${kind}`)}</span>
-      {d.payloadLines != null && d.payloadChars != null ? (
-        <p className={styles.bodyLabel}>
-          {t("chat.approval.egress.size", {
-            lines: d.payloadLines,
-            chars: d.payloadChars,
-            hidden: d.hiddenChars ?? 0
-          })}
-        </p>
+      {(d.hiddenChars ?? 0) > 0 ? (
+        <p className={styles.bodyLabel}>{t("chat.approval.egress.hidden", { hidden: d.hiddenChars })}</p>
       ) : null}
       {d.reviewFullPayload ? (
         <>
@@ -505,7 +499,14 @@ export function ApprovalCard({
   const disabled = busy || remaining === 0;
   const glyph = describeTool(tool.name, tool.input, brandName);
   const tt = t as unknown as T;
-  const plainAction = actionText(tool.name, tool.input, { computer, serverName }, tt);
+  // `use_tool` wraps the real call: the card words (and the glyph shows) the call that would run.
+  const call = resolveToolCall(tool.name, tool.input);
+  const plainAction = actionText(call.name, call.input, { computer, serverName }, tt);
+  const command = actionCommand(call.name, call.input);
+  // Without a command box the owner still sees the real tool and EVERY argument (path, recipient, body).
+  const args = command ? null : actionArguments(call.input);
+  const stepLabel = describeTool(call.name, call.input, brandName);
+  const headline = plainAction ?? t(`${stepLabel.key}.running`, stepLabel.values);
   const plainReason = egress ? reasonLine(egress, tt) : null;
   const detailBody = (
     <>
@@ -585,17 +586,35 @@ export function ApprovalCard({
         ) : (
           <>
             <p className={styles.approvalSummary}>
-              {plainAction || plainReason || egress?.reason || tool.summary || tool.name}
+              {headline}
             </p>
-            {plainAction && plainReason ? (
+            {command ? (
+              <>
+                <pre className={styles.code} tabIndex={0} data-testid="approval-command">{command.text}</pre>
+                {command.shortened ? (
+                  <p className={styles.bodyLabel} data-testid="approval-command-shortened">
+                    {t("chat.approval.commandShortened", { shown: COMMAND_LIMIT })}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+            {args ? (
+              <>
+                <p className={styles.bodyLabel}>
+                  <span className={styles.approvalTool}>{call.name}</span>{" "}
+                  {t("chat.approval.input.label", { name: call.name })}
+                </p>
+                <pre className={styles.code} tabIndex={0} data-testid="approval-input">{args.text}</pre>
+                {args.shortened ? (
+                  <p className={styles.bodyLabel} data-testid="approval-input-shortened">
+                    {t("chat.approval.input.shortened", { shown: INPUT_LIMIT })}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+            {plainReason ? (
               <p className={styles.bodyLabel} data-testid="approval-reason">{plainReason}</p>
             ) : null}
-            <div className={styles.approvalMeta}>
-              <span className={styles.approvalTool}>{tool.name}</span>
-              <span className={styles.inputSummary}>
-                {summarizeInput(tool.input, 140)}
-              </span>
-            </div>
           </>
         )}
         {why ? (
@@ -604,7 +623,7 @@ export function ApprovalCard({
           </p>
         ) : null}
         {control ? <ControlGrantBody d={control} /> : null}
-        {plainAction && (egress || computer) ? (
+        {egress ? (
           <details open={egress?.reviewFullPayload === true} data-testid="approval-details">
             <summary className={styles.bodyLabel}>{t("chat.approval.plain.details")}</summary>
             {detailBody}

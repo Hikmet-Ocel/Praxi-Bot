@@ -854,6 +854,7 @@
       "waiting": "Wartet auf deine Genehmigung"
     },
     "pausedIdle": "Zum Ressourcensparen pausiert – zum Fortsetzen klicken",
+    "permissionLabel": "Berechtigungsstufe: {{level}}",
     "profile": "Bot-Profil",
     "runsOnHost": "Läuft auf {{name}} (Host)",
     "runsOnLocal": "Läuft auf diesem Computer",
@@ -992,6 +993,7 @@
         },
         "tools": "Werkzeuge"
       },
+      "commandShortened": "Befehl gekürzt: Es werden nur die ersten {{shown}} Zeichen angezeigt.",
       "computer": "Diese Aktion läuft auf {{kind}} „{{name}}“ (ID {{id}}).",
       "control": {
         "button": "Diese Aufgabe: {{program}}",
@@ -1019,6 +1021,7 @@
       "countdown": "Automatische Ablehnung in {{seconds}} s",
       "deny": "Ablehnen",
       "egress": {
+        "hidden": "{{hidden}} unsichtbare Zeichen werden als <U+XXXX> angezeigt",
         "host": "Ziel: {{host}}",
         "large": "Dieser Inhalt ist zu groß für die kompakte Karte ({{bytes}} Byte). Öffne den vollständigen Text und scrolle vor der Genehmigung bis zum Ende.",
         "payload": {
@@ -1027,8 +1030,11 @@
           "url": "Ausgehende URL (vollständig angezeigt):"
         },
         "read": "Dieser Lauf hat gelesen: {{list}}",
-        "reviewFull": "Vollständigen Inhalt prüfen",
-        "size": "{{lines}} Zeilen, {{chars}} Zeichen, {{hidden}} nicht druckbare Zeichen als <U+XXXX> angezeigt"
+        "reviewFull": "Vollständigen Inhalt prüfen"
+      },
+      "input": {
+        "label": "Genau das erhält {{name}}",
+        "shortened": "Gekürzt: Es werden nur die ersten {{shown}} Zeichen angezeigt."
       },
       "memory": {
         "always": "{{target}} für diesen Bot immer erlauben",
@@ -1061,15 +1067,26 @@
           "pcScreenKeys": "{{keys}} auf DEINEM Computer drücken",
           "pcScreenLook": "Den Bildschirm DEINES Computers ansehen",
           "pcScreenType": "Auf DEINEM Computer tippen: {{text}}",
-          "pcShell": "Einen Befehl auf DEINEM Computer ausführen: {{command}}",
+          "pcShell": "Diesen Befehl auf DEINEM Computer ausführen:",
           "pcWrite": "Eine Datei auf DEINEM Computer schreiben: {{path}}",
           "screen": "Den Bildschirm von {{where}} verwenden",
-          "shell": "Befehl auf {{where}} ausführen: {{command}}"
+          "shell": "Diesen Befehl auf {{where}} ausführen:"
         },
         "details": "Details",
+        "host": {
+          "bots": "deine Bots",
+          "browser": "der Browser",
+          "desktop": "der Desktop",
+          "mailbox": "das Postfach",
+          "mailboxNamed": "Postfach {{name}}",
+          "memory": "das Gedächtnis dieses Bots",
+          "scheduler": "die Zeitplanung dieses Bots",
+          "script": "ein Skript",
+          "shell": "die Kommandozeile"
+        },
         "reason": {
-          "egress": "Der Bot hat {{list}} gelesen und möchte nun Daten an {{host}} senden.",
-          "egressExecutes": "Der Bot hat {{list}} gelesen und möchte nun Daten an {{host}} senden und ein Programm starten. Aufrufe, die ein Programm starten, fragen immer nach.",
+          "egress": "Der Bot hat {{list}} gelesen und möchte nun Daten senden (Ziel: {{host}}).",
+          "egressExecutes": "Der Bot hat {{list}} gelesen und möchte nun Daten senden (Ziel: {{host}}) und ein Programm starten. Aufrufe, die ein Programm starten, fragen immer nach.",
           "unknownSources": "nicht vertrauenswürdige oder private Inhalte"
         },
         "source": {
@@ -1142,6 +1159,7 @@
       "details": "Details",
       "problems_one": "{{count}} Schritt fehlgeschlagen",
       "problems_other": "{{count}} Schritte fehlgeschlagen",
+      "slow": "Dauert länger als üblich",
       "started": "Gestartet {{start}}",
       "startedFinished": "Gestartet {{start}} · beendet {{end}}",
       "thought": "Nachgedacht: {{duration}}",
@@ -1270,6 +1288,7 @@
     "pendingPinned": "Wartet auf deine Entscheidung. Die Karte steht über dem Nachrichtenfeld.",
     "placeholder": "Nachricht …  / Befehle · @ Bots",
     "placeholderBusy": "Der Bot arbeitet – einreihen oder lenken …",
+    "placeholderWaiting": "Wartet auf deine Freigabe. Eine getippte Nachricht wird eingereiht …",
     "question": {
       "answer": "Antworten",
       "answered": "Du hast geantwortet: {{answer}}",

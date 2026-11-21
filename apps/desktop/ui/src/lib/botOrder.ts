@@ -34,6 +34,41 @@ export function moveBotBy(ids: readonly string[], id: string, delta: -1 | 1): st
   return moveBotTo(ids, id, ids.indexOf(id) + delta);
 }
 
+/**
+ * Per-computer main bot: each computer (this one, or a paired host id) has its OWN order list, so
+ * "Make main" on a host never rewrites this computer's order and switching the selector never
+ * moves the star. `local` is the legacy `botOrder` list; `hosts` is keyed by host id.
+ */
+export interface BotOrders {
+  local: readonly string[];
+  hosts: Readonly<Record<string, readonly string[]>>;
+}
+
+const NO_ORDER: readonly string[] = [];
+
+/** The order list that belongs to `computerId` (`localId` = this computer). Stable reference. */
+export function botOrderFor(orders: BotOrders, computerId: string, localId = "local"): readonly string[] {
+  return computerId === localId ? orders.local : (orders.hosts[computerId] ?? NO_ORDER);
+}
+
+/** `orders` with `computerId`'s list replaced; other computers' lists are untouched. */
+export function withBotOrder(orders: BotOrders, computerId: string, next: readonly string[], localId = "local"): BotOrders {
+  return computerId === localId
+    ? { ...orders, local: next }
+    : { ...orders, hosts: { ...orders.hosts, [computerId]: next } };
+}
+
+/** Parse the stored host-id -> order map; anything malformed is dropped. */
+export function parseHostBotOrders(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, string[]> = {};
+  for (const [id, list] of Object.entries(value as Record<string, unknown>)) {
+    const parsed = parseBotOrder(list);
+    if (parsed.length > 0) out[id] = parsed;
+  }
+  return out;
+}
+
 /** Drop stale ids and keep a stable list for storage. */
 export function parseBotOrder(value: unknown): string[] {
   return Array.isArray(value) ? [...new Set(value.filter((x): x is string => typeof x === "string"))] : [];

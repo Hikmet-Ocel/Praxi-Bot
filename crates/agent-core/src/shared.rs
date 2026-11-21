@@ -1567,14 +1567,14 @@ impl Shared {
             for label in prior.sources {
                 taint.note_label(&label);
             }
-            // Another bot's reply (an `@mention` chat) reaches this run as
-            // untrusted data whatever that bot read. Same single exposure
-            // state as every other source: no separate flag for mentions.
             // Text read out of an attached file is untrusted data like any tool read.
             if let Some(name) = crate::history::text_attachment_source(&self.storage, run) {
                 taint.exposure.observe(true, false);
                 taint.note_label(&format!("attached file {name}"));
             }
+            // Another bot's reply (an `@mention` chat) reaches this run as
+            // untrusted data whatever that bot read. Same single exposure
+            // state as every other source: no separate flag for mentions.
             if crate::history::has_foreign_replies(&self.storage, run) {
                 taint.exposure.observe(true, false);
                 taint.note_label("another bot's reply");

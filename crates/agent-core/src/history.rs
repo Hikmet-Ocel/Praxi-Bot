@@ -181,11 +181,16 @@ fn append_chat_history(
         out.push(Message::text(MessageRole::System, HISTORY_OMITTED_NOTE));
     }
     let mut authors: HashMap<RunId, Option<BotId>> = HashMap::new();
+    let mut attachment_budget = crate::attachments::MAX_BLOCKS_PER_RUN;
     for m in history {
         match m.role.as_str() {
             "user" => {
-                let content =
-                    crate::attachments::model_content(storage.data_dir(), chat, &m.content);
+                let content = crate::attachments::model_content_budgeted(
+                    storage.data_dir(),
+                    chat,
+                    &m.content,
+                    &mut attachment_budget,
+                );
                 out.push(Message {
                     content,
                     ..Message::text(MessageRole::User, "")

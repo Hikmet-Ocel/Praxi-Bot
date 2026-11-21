@@ -31,6 +31,7 @@ use crate::daemon_client::{
 };
 use crate::error::{Result, TelegramError};
 use crate::inbox::{DeliveryReceipt, Inbox, MAX_ATTEMPTS};
+use crate::messages::Message;
 use crate::pairing::{
     PairAttempt, PairingStore, TELEGRAM_BOT_TOKEN_SECRET, UNPAIRED_REFUSAL_TEXT, load_bot_token,
 };
@@ -464,7 +465,7 @@ fn approval_markup(
     offer_run_control: bool,
 ) -> Option<InlineKeyboardMarkup> {
     let mut row = vec![InlineButton::new(
-        "Approve once",
+        Message::ApproveOnce.english(),
         format_approval_callback(a.call_id, "once"),
     )];
     // Only when the whole card fits one message: the daemon-written lines that
@@ -476,19 +477,19 @@ fn approval_markup(
             .and_then(protocol::approval_text::control_grant_program)
     {
         row.push(InlineButton::new(
-            format!("This task: {program}"),
+            Message::ApproveForTask { program: &program }.english(),
             format_approval_callback(a.call_id, "run"),
         ));
     }
     // No standing grant for tools that bring details.
     if a.details.is_none() {
         row.push(InlineButton::new(
-            "Always",
+            Message::Always.english(),
             format_approval_callback(a.call_id, "always"),
         ));
     }
     row.push(InlineButton::new(
-        "Deny",
+        Message::Deny.english(),
         format_approval_callback(a.call_id, "deny"),
     ));
     InlineKeyboardMarkup::from_rows(vec![row])
@@ -1022,46 +1023,35 @@ impl TelegramChannel {
         is_child: bool,
         a: protocol::event::ApprovalNeeded,
     ) -> Result<()> {
-        let run_is_child = is_child;
-        let prefix = if run_is_child { "subagent: " } else { "" };
+        let tool = &a.tool_name;
+        let heading = Message::ApprovalHeading {
+            tool,
+            subagent: is_child,
+        }
+        .english();
         // A tool that attaches details (a schedule) must be shown in
         // full before anyone can approve it here; if that is not
         // possible, approval is left to the desktop app.
         let (body, offer) = match &a.details {
-            None => (
-                format!(
-                    "⚠️ Approval needed ({prefix}{})
-{}",
-                    a.tool_name, a.summary
-                ),
-                true,
-            ),
+            None => (format!("{heading}\n{}", a.summary), true),
             Some(d) => match protocol::approval_text::describe_details(d) {
                 Some(full) => {
-                    let shown = format!(
-                        "⚠️ Approval needed ({prefix}{})
-{full}",
-                        a.tool_name
-                    );
+                    let shown = format!("{heading}\n{full}");
                     // This channel's own redactor must not change what is shown
                     // either: the stored request holds the raw text.
                     if self.redact(&shown) == shown {
                         (shown, true)
                     } else {
                         (
-                            format!(
-                                "⚠️ {} needs approval, but part of it would be masked here, so this chat cannot show it fully. Approve or deny it in the desktop app.",
-                                a.tool_name
-                            ),
+                            Message::ApprovalMasked { tool }.english().into_owned(),
                             false,
                         )
                     }
                 }
                 None => (
-                    format!(
-                        "⚠️ {} needs approval, but this chat cannot show what it would do. Approve or deny it in the desktop app.",
-                        a.tool_name
-                    ),
+                    Message::ApprovalDetailsUnavailable { tool }
+                        .english()
+                        .into_owned(),
                     false,
                 ),
             },
@@ -1072,14 +1062,7 @@ impl TelegramChannel {
         let chunks = protocol::approval_text::chunk_text(&redacted, 3500);
         if chunks.len() > 40 {
             let _ = self
-                .send_redacted(
-                    chat_id,
-                    &format!(
-                        "⚠️ {} needs approval, but it is too large to review in Telegram. Review it in the desktop app.",
-                        a.tool_name
-                    ),
-                    None,
-                )
+                .send_redacted(chat_id, &Message::ApprovalTooLarge { tool }.english(), None)
                 .await;
             return Ok(());
         }
@@ -1134,11 +1117,7 @@ impl TelegramChannel {
                     chunks.len()
                 );
                 let _ = self
-                    .send_redacted(
-                        chat_id,
-                        "Approval could not be shown completely here. Approve or deny it in the desktop app.",
-                        None,
-                    )
+                    .send_redacted(chat_id, &Message::ApprovalIncomplete.english(), None)
                     .await;
                 return Ok(());
             }
@@ -1262,7 +1241,7 @@ impl TelegramChannel {
             return Ok(());
         }
         if trimmed.chars().count() > MAX_INCOMING_CHARS {
-            self.send_redacted(chat_id, "Message too long; please shorten it.", None)
+            self.send_redacted(chat_id, &Message::InputTooLong.english(), None)
                 .await?;
             return Ok(());
         }
@@ -1320,7 +1299,7 @@ impl TelegramChannel {
     async fn handle_bots_command(&self, chat_id: i64) -> Result<()> {
         let bots = self.inner.api_client.list_bots().await?;
         if bots.is_empty() {
-            self.send_redacted(chat_id, "No bots configured.", None)
+            self.send_redacted(chat_id, &Message::NoBots.english(), None)
                 .await?;
             return Ok(());
         }
@@ -1332,7 +1311,7 @@ impl TelegramChannel {
             .or_else(|| bots.first().map(|b| b.id));
 
         let mut lines = Vec::with_capacity(bots.len() + 1);
-        lines.push("Available bots:".to_owned());
+        lines.push(Message::AvailableBots.english().into_owned());
         for b in &bots {
             let mark = if Some(b.id) == active { "*" } else { "•" };
             lines.push(format!("{mark} {} ({})", b.name, b.id));
@@ -1359,12 +1338,8 @@ impl TelegramChannel {
             });
 
         let Some(bot) = found else {
-            self.send_redacted(
-                chat_id,
-                &format!("Bot {query:?} not found. Use /bots to list available bots."),
-                None,
-            )
-            .await?;
+            self.send_redacted(chat_id, &Message::BotNotFound { query }.english(), None)
+                .await?;
             return Ok(());
         };
 
@@ -1418,7 +1393,7 @@ impl TelegramChannel {
                 .await?;
         } else {
             self.inner.inbox.delivered(update_id, None)?;
-            self.send_redacted(chat_id, "No active run to stop.", None)
+            self.send_redacted(chat_id, &Message::NoActiveRun.english(), None)
                 .await?;
         }
         Ok(())
@@ -1580,7 +1555,7 @@ impl TelegramChannel {
                     }
                     rt.queued.remove(&telegram_chat_id);
                 }
-                self.send_redacted(telegram_chat_id, "🛑 Run stopped.", None)
+                self.send_redacted(telegram_chat_id, &Message::RunStopped.english(), None)
                     .await?;
             }
             DeliveryKind::Queued if outcome.run_id.is_none() => {
@@ -1782,7 +1757,10 @@ impl TelegramChannel {
             if !allowed {
                 self.inner
                     .bot_api
-                    .answer_callback_query(query_id, Some("Unknown or expired request"))
+                    .answer_callback_query(
+                        query_id,
+                        Some(&Message::UnknownOrExpiredRequest.english()),
+                    )
                     .await?;
                 return Ok(());
             }
@@ -1797,7 +1775,7 @@ impl TelegramChannel {
             {
                 self.inner
                     .bot_api
-                    .answer_callback_query(query_id, Some("This can only be approved once"))
+                    .answer_callback_query(query_id, Some(&Message::OnceOnly.english()))
                     .await?;
                 return Ok(());
             }
@@ -1816,12 +1794,12 @@ impl TelegramChannel {
             self.inner.once_only_approvals.lock().remove(&call_id);
             self.inner.run_control_approvals.lock().remove(&call_id);
             let ack = match decision {
-                ApprovalDecision::Approve => "Approved",
-                ApprovalDecision::Deny => "Denied",
+                ApprovalDecision::Approve => Message::Approved,
+                ApprovalDecision::Deny => Message::Denied,
             };
             self.inner
                 .bot_api
-                .answer_callback_query(query_id, Some(ack))
+                .answer_callback_query(query_id, Some(&ack.english()))
                 .await?;
             return Ok(());
         }
@@ -1846,7 +1824,10 @@ impl TelegramChannel {
             let Some(answer) = answer else {
                 self.inner
                     .bot_api
-                    .answer_callback_query(query_id, Some("Unknown or expired request"))
+                    .answer_callback_query(
+                        query_id,
+                        Some(&Message::UnknownOrExpiredRequest.english()),
+                    )
                     .await?;
                 return Ok(());
             };
@@ -1864,7 +1845,7 @@ impl TelegramChannel {
             }
             self.inner
                 .bot_api
-                .answer_callback_query(query_id, Some("Answered"))
+                .answer_callback_query(query_id, Some(&Message::Answered.english()))
                 .await?;
             return Ok(());
         }

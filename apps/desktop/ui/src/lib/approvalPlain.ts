@@ -22,6 +22,27 @@ export function sourceText(label: string, t: T): string {
   return label;
 }
 
+/** The daemon's English target ids ("the shell") and the key of their words in the UI language. */
+const HOSTS: Record<string, string> = {
+  "the shell": "shell",
+  "a script": "script",
+  "the browser": "browser",
+  "the desktop": "desktop",
+  "the mailbox": "mailbox",
+  "this bot's scheduler": "scheduler",
+  "this bot's memory": "memory",
+  "the user's bots": "bots"
+};
+
+/** Where the data goes, as words: a known internal target id is translated, a site or domain stays. */
+export function hostText(host: string, t: T): string {
+  const key = HOSTS[host];
+  if (key) return t(`chat.approval.plain.host.${key}`);
+  const m = /^mailbox (.+)$/s.exec(host);
+  if (m) return t("chat.approval.plain.host.mailboxNamed", { name: m[1] });
+  return host;
+}
+
 /** Why it asks, in one sentence, from the daemon's reason code. `null` for an older daemon (use its text). */
 export function reasonLine(egress: EgressApprovalDetails, t: T): string | null {
   if (egress.reasonCode !== "egress" && egress.reasonCode !== "egress_executes") return null;
@@ -29,7 +50,7 @@ export function reasonLine(egress: EgressApprovalDetails, t: T): string | null {
     ? egress.read.map((s) => sourceText(s, t)).join(", ")
     : t("chat.approval.plain.reason.unknownSources");
   const key = egress.reasonCode === "egress_executes" || egress.executes ? "egressExecutes" : "egress";
-  return t(`chat.approval.plain.reason.${key}`, { list, host: egress.host });
+  return t(`chat.approval.plain.reason.${key}`, { list, host: hostText(egress.host, t) });
 }
 
 export interface WhereInput {
@@ -135,7 +156,7 @@ export function actionText(tool: string, input: unknown, w: WhereInput, t: T): s
   const where = whereText(tool, w, t);
   // The `pc_*` family always acts on the USER'S computer, whatever the bot runs on.
   if (tool.startsWith("pc_")) {
-    if (tool === "pc_shell_run") return t("chat.approval.plain.action.pcShell", { command: whole(rec.command, 400) });
+    if (tool === "pc_shell_run") return t("chat.approval.plain.action.pcShell");
     if (tool === "pc_fs_write") return t("chat.approval.plain.action.pcWrite", { path: clip(rec.path, 200) });
     if (tool === "pc_fs_read" || tool === "pc_fs_list") {
       return t("chat.approval.plain.action.pcRead", { path: clip(rec.path, 200) });
@@ -143,7 +164,7 @@ export function actionText(tool: string, input: unknown, w: WhereInput, t: T): s
     return pcComputerText(tool, rec, t);
   }
   if (tool === "shell_run") {
-    return t("chat.approval.plain.action.shell", { where, command: whole(rec.command, 400) });
+    return t("chat.approval.plain.action.shell", { where });
   }
   if (tool === "desktop_launch") {
     return t("chat.approval.plain.action.launch", { where, name: clip(rec.executable, 80) });
@@ -153,4 +174,71 @@ export function actionText(tool: string, input: unknown, w: WhereInput, t: T): s
   }
   if (tool.startsWith("desktop_")) return t("chat.approval.plain.action.screen", { where });
   return null;
+}
+
+/** Characters of a shell command shown before the card says it was cut. */
+export const COMMAND_LIMIT = 2000;
+/** Characters of the full tool input shown before the card says it was cut. */
+export const INPUT_LIMIT = 4000;
+
+/**
+ * Control, bidi-override and zero-width characters written as `<U+XXXX>`, so a command or an
+ * argument cannot hide text or reorder what the owner reads. Tabs and line breaks stay as they are.
+ */
+export function escapeInvisible(text: string): string {
+  let out = "";
+  for (const ch of text.replace(/\r\n/g, "\n")) {
+    const c = ch.codePointAt(0) ?? 0;
+    const hidden =
+      (c < 0x20 && c !== 0x09 && c !== 0x0a) ||
+      (c >= 0x7f && c <= 0x9f) ||
+      c === 0xad || c === 0x61c || c === 0x180e ||
+      (c >= 0x200b && c <= 0x200f) ||
+      (c >= 0x2028 && c <= 0x202e) ||
+      (c >= 0x2060 && c <= 0x206f) ||
+      c === 0xfeff ||
+      (c >= 0xfff9 && c <= 0xfffb);
+    out += hidden ? "<U+" + c.toString(16).toUpperCase().padStart(4, "0") + ">" : ch;
+  }
+  return out;
+}
+
+/** `text` cut to `max` characters (ending in "…") and escaped; `shortened` says whether it was cut. */
+function cutAndEscape(text: string, max: number): { text: string; shortened: boolean } {
+  const chars = [...text];
+  if (chars.length > max) return { text: `${escapeInvisible(chars.slice(0, max).join(""))}…`, shortened: true };
+  return { text: escapeInvisible(text), shortened: false };
+}
+
+/**
+ * The command of a shell call, whole and on its own lines, for the code box under the sentence;
+ * `null` for any other call. Only a very long one is cut (`shortened`, text ends in "…").
+ */
+export function actionCommand(tool: string, input: unknown): { text: string; shortened: boolean } | null {
+  if (tool !== "shell_run" && tool !== "pc_shell_run") return null;
+  const rec = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const text = typeof rec.command === "string" ? rec.command.trim() : "";
+  if (!text) return null;
+  return cutAndEscape(text, COMMAND_LIMIT);
+}
+
+/**
+ * The whole input of a call as readable text (pretty JSON), so the owner sees every argument
+ * (path, recipient, body, url, typed text) before approving. `null` when there is no input.
+ */
+export function actionArguments(input: unknown): { text: string; shortened: boolean } | null {
+  if (input === null || input === undefined || input === "") return null;
+  if (typeof input === "object" && Object.keys(input as object).length === 0) return null;
+  let text: string;
+  if (typeof input === "string") {
+    text = input;
+  } else {
+    try {
+      text = JSON.stringify(input, null, 2) ?? "";
+    } catch {
+      text = String(input);
+    }
+  }
+  if (!text) return null;
+  return cutAndEscape(text, INPUT_LIMIT);
 }

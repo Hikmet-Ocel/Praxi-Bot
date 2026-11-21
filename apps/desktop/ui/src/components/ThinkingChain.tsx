@@ -1,10 +1,11 @@
 import { ChevronDown, ChevronRight, Globe } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { brandIcon } from "../lib/brandIcons";
 import { formatClock, formatStamp, formatStepDuration, type MessageTimes } from "../lib/messageTime";
 import { type Chain, chainSeconds, type ChainStep } from "../lib/thinkingChain";
+import { isInFlight, isOrphanStep, isSlowStep } from "../lib/stepStuck";
 import { describeTool, stepPhase } from "../lib/toolLabels";
 import type { ToolItem } from "../state/timeline";
 import { ToolBody } from "./ChatCards";
@@ -44,19 +45,29 @@ function stepMs(tool: ToolItem): number | undefined {
   return tool.completedMs !== undefined ? tool.completedMs - tool.requestedMs : undefined;
 }
 
-function ToolStep({ tool, times }: { tool: ToolItem; times: MessageTimes }) {
+function ToolStep({ tool, times, live }: { tool: ToolItem; times: MessageTimes; live: boolean }) {
   const { t, i18n } = useTranslation();
   const ms = stepMs(tool);
   const clock = times === "off" ? null : formatClock(tool.requestedMs, i18n.language, true);
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const label = describeTool(tool.name, tool.input, brandName);
-  const active = tool.status === "requested" || tool.status === "running";
+  // A step whose end never arrived in a chain that is over is shown as not finished, never as running.
+  const orphan = isOrphanStep(tool.status, live);
+  const active = isInFlight(tool.status) && !orphan;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return undefined;
+    const id = window.setInterval(() => setNow(Date.now()), 5000);
+    return () => window.clearInterval(id);
+  }, [active]);
+  const slow = active && isSlowStep(tool, now);
   const bad =
+    orphan ||
     tool.status === "error" ||
     tool.status === "denied" ||
     tool.status === "expired";
-  const phase = stepPhase(tool.status);
+  const phase = orphan ? "failed" : stepPhase(tool.status);
   const text = t(`${label.key}.${phase}`, label.values);
   return (
     <li
@@ -72,7 +83,12 @@ function ToolStep({ tool, times }: { tool: ToolItem; times: MessageTimes }) {
           <b className={active ? styles.shim : styles.stepLabel}>{text}</b>
           {bad ? (
             <span className={styles.stepStatus}>
-              {t(`chat.tool.status.${tool.status}`)}
+              {t(`chat.tool.status.${orphan ? "expired" : tool.status}`)}
+            </span>
+          ) : null}
+          {slow ? (
+            <span className={styles.stepStatus} data-testid="step-slow">
+              {t("chat.chain.slow")}
             </span>
           ) : null}
           <button
@@ -123,13 +139,13 @@ function ToolStep({ tool, times }: { tool: ToolItem; times: MessageTimes }) {
   );
 }
 
-function Step({ step, times }: { step: ChainStep; times: MessageTimes }) {
+function Step({ step, times, live }: { step: ChainStep; times: MessageTimes; live: boolean }) {
   return step.kind === "thought" ? (
     <li className={styles.thought}>
       <Markdown text={step.text} />
     </li>
   ) : (
-    <ToolStep tool={step.tool} times={times} />
+    <ToolStep tool={step.tool} times={times} live={live} />
   );
 }
 
@@ -198,7 +214,7 @@ export function ThinkingChain({
       {open ? (
         <ol id={listId} className={styles.steps}>
           {chain.steps.map((s) => (
-            <Step key={s.key} step={s} times={times} />
+            <Step key={s.key} step={s} times={times} live={chain.live} />
           ))}
         </ol>
       ) : null}

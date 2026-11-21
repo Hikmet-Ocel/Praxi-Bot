@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { BotAvatar, type BotAvatarState, type BotIdentity } from "ui";
 import type { UpdateChatInput } from "../api/types";
 import { activitySections, librarySections, subagentRows } from "../lib/activityPanel";
+import { isSlowStep } from "../lib/stepStuck";
 import { type PermissionTone, permissionTone } from "../lib/botEditor";
 import { chatActivity, chatDateLabel } from "../lib/botLanding";
 import { CHAT_SEARCH_MIN_CHATS, filterChats } from "../lib/chatSearch";
@@ -59,11 +60,15 @@ export function PermissionChip({ preset }: { preset: PresetChoice }) {
   const { t } = useTranslation();
   const tone = permissionTone(preset);
   const Icon = TONE_ICONS[tone];
+  // "Permission level: Full access. <what it allows>": the chip's one word alone says nothing.
+  const label = `${t("botPanel.permissionLabel", { level: t(`botForm.preset.${preset}.name`) })}. ${t(`botForm.preset.${preset}.hint`)}`;
   return (
     <span
       className={styles.chip}
       data-tone={tone}
-      title={t(`botForm.preset.${preset}.hint`)}
+      title={label}
+      role="img"
+      aria-label={label}
       data-testid="bot-permission-chip"
     >
       <Icon aria-hidden="true" />
@@ -288,6 +293,7 @@ export function BotPanel({
                   <small>
                     {[
                       now.subagents > 0 ? t("botPanel.now.subagents", { count: now.subagents }) : null,
+                      !now.approval && now.step && isSlowStep(now.step, nowTick) ? t("chat.chain.slow") : null,
                       formatElapsed(nowTick - now.startedMs)
                     ]
                       .filter(Boolean)

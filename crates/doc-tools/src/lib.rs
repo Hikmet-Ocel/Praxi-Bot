@@ -163,8 +163,23 @@ pub fn attachment_text(
         check_zip_limits(bytes)?;
     }
     // The parsers are bounded by their own budgets; the deadline is the backstop so one
-    // pathological file cannot hold an upload request open. The worker thread is detached
-    // on a timeout and ends by itself.
+    // pathological file cannot hold an upload request open. A parser cannot be interrupted
+    // from outside, so a timed-out worker is detached and runs on until it ends by itself;
+    // it keeps its slot in `EXTRACTIONS` until then, so detached workers stay bounded.
+    // Wait for a free slot, but no longer than one extraction may run: a busy or stuck
+    // pool is then a clean error, not an unbounded pile of threads.
+    let wait_until = std::time::Instant::now() + ATTACHMENT_EXTRACT_TIMEOUT;
+    let slot = loop {
+        if let Some(slot) = EXTRACTIONS.try_acquire() {
+            break slot;
+        }
+        if std::time::Instant::now() >= wait_until {
+            return Err(ToolError::Execution(
+                "too many documents are being read right now; try again in a moment".into(),
+            ));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    };
     let (cfg, extension, label, bytes) = (
         cfg.clone(),
         extension.to_owned(),
@@ -173,6 +188,7 @@ pub fn attachment_text(
     );
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
+        let _slot = slot;
         let _ = tx.send(attachment_text_inner(
             &cfg, &extension, &label, &bytes, max_bytes,
         ));
@@ -185,34 +201,86 @@ pub fn attachment_text(
         })
 }
 
+/// Most attachment extractions in flight at once, timed-out ones included.
+const MAX_CONCURRENT_EXTRACTIONS: usize = 2;
+static EXTRACTIONS: ExtractionLimiter = ExtractionLimiter::new(MAX_CONCURRENT_EXTRACTIONS);
+
+/// Counting limiter: a slot is held until its guard drops (fail fast, no queueing).
+struct ExtractionLimiter {
+    max: usize,
+    in_flight: std::sync::atomic::AtomicUsize,
+}
+
+struct ExtractionSlot(&'static ExtractionLimiter);
+
+impl ExtractionLimiter {
+    const fn new(max: usize) -> Self {
+        Self {
+            max,
+            in_flight: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+
+    fn try_acquire(&'static self) -> Option<ExtractionSlot> {
+        use std::sync::atomic::Ordering::SeqCst;
+        let mut n = self.in_flight.load(SeqCst);
+        loop {
+            if n >= self.max {
+                return None;
+            }
+            match self.in_flight.compare_exchange(n, n + 1, SeqCst, SeqCst) {
+                Ok(_) => return Some(ExtractionSlot(self)),
+                Err(now) => n = now,
+            }
+        }
+    }
+}
+
+impl Drop for ExtractionSlot {
+    fn drop(&mut self) {
+        self.0
+            .in_flight
+            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
 /// Longest an attachment extraction may run.
 const ATTACHMENT_EXTRACT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
 /// Most entries an Office archive may hold.
 const MAX_ZIP_ENTRIES: usize = 5_000;
-/// Most bytes all entries of an Office archive may expand to (declared sizes).
+/// Most bytes all entries of an Office archive may expand to.
 const MAX_ZIP_UNCOMPRESSED: u64 = 128 * 1024 * 1024;
 /// Most bytes one entry may expand to.
 const MAX_ZIP_ENTRY: u64 = 64 * 1024 * 1024;
 
-/// Refuse an Office archive that is built to expand: too many entries or too large a
-/// declared uncompressed size (the reader never yields more than an entry declares).
+/// Refuse an Office archive that is built to expand: too many entries, or entries that
+/// really decompress past the limits. Declared sizes are only a quick first check (a forged
+/// header can lie); the actual decompressed bytes are counted with a read limit, and a
+/// corrupt entry is refused too.
 fn check_zip_limits(bytes: &[u8]) -> Result<(), ToolError> {
+    use std::io::Read as _;
     let bad = |m: &str| ToolError::InvalidInput(m.into());
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
         .map_err(|_| bad("not a valid Office file"))?;
     if zip.len() > MAX_ZIP_ENTRIES {
         return Err(bad("the document has too many parts"));
     }
+    let too_big = || bad("the document expands beyond the size limit");
     let mut total = 0u64;
     for i in 0..zip.len() {
-        let size = zip
-            .by_index_raw(i)
-            .map_err(|_| bad("not a valid Office file"))?
-            .size();
-        total = total.saturating_add(size);
-        if size > MAX_ZIP_ENTRY || total > MAX_ZIP_UNCOMPRESSED {
-            return Err(bad("the document expands beyond the size limit"));
+        let entry = zip
+            .by_index(i)
+            .map_err(|_| bad("not a valid Office file"))?;
+        if entry.size() > MAX_ZIP_ENTRY {
+            return Err(too_big());
         }
+        let allowed = MAX_ZIP_ENTRY.min(MAX_ZIP_UNCOMPRESSED.saturating_sub(total));
+        let read = std::io::copy(&mut entry.take(allowed + 1), &mut std::io::sink())
+            .map_err(|_| bad("not a valid Office file"))?;
+        if read > allowed {
+            return Err(too_big());
+        }
+        total += read;
     }
     Ok(())
 }
@@ -450,6 +518,50 @@ pub(crate) fn mk_spec(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn zip_with_forged_sizes_is_refused_on_actual_bytes() {
+        use std::io::Write as _;
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut w = zip::ZipWriter::new(&mut buf);
+            w.start_file(
+                "word/document.xml",
+                zip::write::SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Deflated),
+            )
+            .unwrap();
+            let chunk = vec![b'a'; 1024 * 1024];
+            for _ in 0..70 {
+                w.write_all(&chunk).unwrap();
+            }
+            w.finish().unwrap();
+        }
+        let mut bytes = buf.into_inner();
+        assert!(
+            check_zip_limits(&bytes).is_err(),
+            "honest header is refused"
+        );
+        // Forge the uncompressed size down to 1000 in the local and central headers.
+        for (sig, at) in [(b"PK\x03\x04", 22), (b"PK\x01\x02", 24)] {
+            let pos = bytes.windows(4).position(|w| w == sig).unwrap();
+            bytes[pos + at..pos + at + 4].copy_from_slice(&1000u32.to_le_bytes());
+        }
+        assert!(
+            check_zip_limits(&bytes).is_err(),
+            "forged header is refused"
+        );
+    }
+
+    #[test]
+    fn extraction_limiter_bounds_in_flight_work() {
+        static L: ExtractionLimiter = ExtractionLimiter::new(2);
+        let a = L.try_acquire().unwrap();
+        let _b = L.try_acquire().unwrap();
+        assert!(L.try_acquire().is_none());
+        drop(a);
+        assert!(L.try_acquire().is_some());
+    }
 
     #[test]
     fn registers_all_tools_with_valid_specs() {

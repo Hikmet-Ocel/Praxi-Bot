@@ -108,6 +108,13 @@ pub struct McpServerConfig {
     pub category: Option<PermissionCategory>,
     /// HTTP header name -> secret name.  Resolved through the secret store
     /// only at connect time; the value is never stored, logged or serialized.
+    ///
+    /// A value may name its secret once instead — `Bearer {secret:NAME}` — and
+    /// the fetched value is substituted for the placeholder, so a declarative
+    /// entry can send a scheme without asking the user to paste one.  At most
+    /// one placeholder is allowed, and `NAME` obeys the same rules as a plain
+    /// value (a valid [`SecretRef`], never a managed OAuth record, never
+    /// `composio/`).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub secret_headers: BTreeMap<String, String>,
     /// Environment variable (stdio) -> secret name.  Same rules as
@@ -315,18 +322,42 @@ impl McpServerConfig {
                         self.id
                     )));
                 }
-                if secret_store::is_managed_oauth_name(name) {
-                    return Err(McpError::Config(format!(
-                        "server `{}`: `{kind}.{key}` names a managed OAuth record; OAuth tokens are never referenced from configuration",
-                        self.id
-                    )));
+                // A header value may be a template (`Bearer {secret:NAME}`).
+                // Its secret is held to the same rules as a plain name, and at
+                // most one secret may be named.
+                let names: Vec<&str> = if kind == "secret_headers" {
+                    let named = crate::transport::secret_header_names(name).map_err(|why| {
+                        McpError::Config(format!("server `{}`: `{kind}.{key}` {why}", self.id))
+                    })?;
+                    if named.len() > 1 {
+                        return Err(McpError::Config(format!(
+                            "server `{}`: `{kind}.{key}` names {} secrets; exactly one is allowed",
+                            self.id,
+                            named.len()
+                        )));
+                    }
+                    if named.is_empty() {
+                        vec![name.as_str()]
+                    } else {
+                        named
+                    }
+                } else {
+                    vec![name.as_str()]
+                };
+                for secret in names {
+                    if secret_store::is_managed_oauth_name(secret) {
+                        return Err(McpError::Config(format!(
+                            "server `{}`: `{kind}.{key}` names a managed OAuth record; OAuth tokens are never referenced from configuration",
+                            self.id
+                        )));
+                    }
+                    SecretRef::new(secret).map_err(|_| {
+                        McpError::Config(format!(
+                            "server `{}`: `{kind}.{key}` has an invalid secret name",
+                            self.id
+                        ))
+                    })?;
                 }
-                SecretRef::new(name.as_str()).map_err(|_| {
-                    McpError::Config(format!(
-                        "server `{}`: `{kind}.{key}` has an invalid secret name",
-                        self.id
-                    ))
-                })?;
             }
         }
         Ok(())
@@ -646,6 +677,32 @@ mod tests {
         c.secret_env.clear();
         c.secret_headers.insert("Authorization".into(), "ok".into());
         assert!(c.validate().is_err(), "secret_headers on stdio");
+    }
+
+    /// A header template is accepted, held to the same secret rules, and may
+    /// name only one secret.
+    #[test]
+    fn header_templates_validate_like_plain_secret_names() {
+        let mut h = McpServerConfig::http("gh", "https://example.com/mcp");
+        h.secret_headers
+            .insert("Authorization".into(), "Bearer {secret:mcp/tok}".into());
+        assert!(h.validate().is_ok(), "template");
+
+        h.secret_headers.insert(
+            "Authorization".into(),
+            "{secret:mcp/tok} {secret:mcp/tok}".into(),
+        );
+        assert!(h.validate().is_err(), "two secrets");
+
+        h.secret_headers.insert(
+            "Authorization".into(),
+            "Bearer {secret:composio/api-key}".into(),
+        );
+        assert!(h.validate().is_err(), "reserved name through a template");
+
+        h.secret_headers
+            .insert("Authorization".into(), "Bearer {secret:mcp/tok".into());
+        assert!(h.validate().is_err(), "unterminated");
     }
 
     #[test]

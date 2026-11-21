@@ -248,11 +248,17 @@
   background-color: var(--color-danger);
 }
 
+/* Pause / done actions sit inside the card's padding and span its width, like the footer below. */
 .control {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-2) var(--space-0);
+  padding: var(--space-1) var(--space-2) var(--space-0);
+}
+
+.control > button {
+  flex: 1 1 auto;
+  justify-content: center;
 }
 
 .foot {

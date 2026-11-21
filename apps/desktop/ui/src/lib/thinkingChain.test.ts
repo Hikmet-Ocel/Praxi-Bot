@@ -101,3 +101,12 @@ test("find_tool / get_tool_details never appear as steps and do not split a chai
   // only plumbing: no chain at all
   assert.deepEqual(kinds([tool("a", 1, "done", "find_tool")], true), []);
 });
+
+test("a refused call is the owner's decision, not a failed step; an errored or expired one is", () => {
+  const chainOf = (statuses: ToolStatus[]) =>
+    (groupRunItems(statuses.map((s, i) => tool(`t${i}`, i * 1000, s)), true)[0] as {
+      chain: import("./thinkingChain.ts").Chain;
+    }).chain;
+  assert.equal(chainOf(["done", "denied"]).problems, 0);
+  assert.equal(chainOf(["error", "expired", "denied"]).problems, 2);
+});

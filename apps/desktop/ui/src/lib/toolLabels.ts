@@ -170,7 +170,8 @@ export const KNOWN_TOOL_NAMES: readonly string[] = Object.keys(TABLE);
 export function stepPhase(
   status: string
 ): "running" | "failed" | "done" {
-  if (status === "requested" || status === "running") {
+  // A call waiting for the owner has NOT run yet: never the "done" wording.
+  if (status === "requested" || status === "running" || status === "awaiting_approval") {
     return "running";
   }
   return status === "error" || status === "denied" || status === "expired"
